@@ -1,0 +1,208 @@
+// Prisma Schema - Chuyển đổi từ SQL Server sang PostgreSQL
+// soicuongluc.com - HARIFA
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ===== DANH MỤC SẢN PHẨM =====
+model SanPhamLoai {
+  id         Int       @id @default(autoincrement()) @map("id")
+  thuTu      Int?      @map("thu_tu")
+  tenLoai    String?   @map("ten_loai")
+  hienThi    Int?      @default(1) @map("hien_thi")
+  hieuLuc    Int?      @default(1) @map("hieu_luc")
+  idCha      Int?      @map("id_cha")
+  url        String?   @map("url")
+  ngay       DateTime? @default(now()) @map("ngay")
+  cap        Int?      @map("cap")
+  hinhAnh    String?   @map("hinh_anh")
+  noiDung    String?   @map("noi_dung")
+  tinNoiBat  Int?      @default(0) @map("tin_noi_bat")
+  tuKhoa1    String?   @map("tu_khoa_1")
+  tuKhoa2    String?   @map("tu_khoa_2")
+  tuKhoa3    String?   @map("tu_khoa_3")
+  tomTat     String?   @map("tom_tat")
+  tags       String?   @map("tags")
+  link       String?   @map("link")
+  timKiem    String?   @map("tim_kiem")
+  soLanXem   Int?      @default(0) @map("so_lan_xem")
+  moTa       String?   @map("mo_ta")
+
+  sanPhams   SanPham[] @relation("SanPhamToLoai")
+  cha        SanPhamLoai?  @relation("LoaiSanPhamCha", fields: [idCha], references: [id])
+  conCai     SanPhamLoai[] @relation("LoaiSanPhamCha")
+
+  @@map("sanpham_loai")
+}
+
+// ===== SẢN PHẨM =====
+model SanPham {
+  id          Int       @id @default(autoincrement()) @map("id")
+  idLoai      Int?      @map("id_loai")
+  thuTu       Int?      @map("thu_tu")
+  maSP        String?   @map("ma_sp")
+  tenSP       String?   @map("ten_sp")
+  nhaSanXuat  String?   @map("nha_san_xuat")
+  hinhNho     String?   @map("hinh_nho")
+  hinhLon     String?   @map("hinh_lon")
+  moTa        String?   @map("mo_ta")
+  noiDung     String?   @map("noi_dung")
+  tomTat      String?   @map("tom_tat")
+  thongSo     String?   @map("thong_so")
+  ungDung     String?   @map("ung_dung")
+  hienThi     Int?      @default(1) @map("hien_thi")
+  hieuLuc     Int?      @default(1) @map("hieu_luc")
+  spTieuBieu  Int?      @default(0) @map("sp_tieu_bieu")
+  spMoi       Int?      @default(0) @map("sp_moi")
+  spKhuyenMai Int?      @default(0) @map("sp_khuyen_mai")
+  soLanXem    Int?      @default(0) @map("so_lan_xem")
+  ngay        DateTime? @default(now()) @map("ngay")
+  gia         Float?  @map("gia")
+  giaKM       Float?  @map("gia_km")
+  donVi       String?   @map("don_vi")
+  tuKhoa1     String?   @map("tu_khoa_1")
+  tuKhoa2     String?   @map("tu_khoa_2")
+  tuKhoa3     String?   @map("tu_khoa_3")
+  tags        String?   @map("tags")
+  link        String?   @map("link")
+  timKiem     String?   @map("tim_kiem")
+  // Thông số kỹ thuật đặc thù sợi
+  chieuRong   String?   @map("chieu_rong")
+  chieuDai    String?   @map("chieu_dai")
+  chieuCao    String?   @map("chieu_cao")
+  duongKinh  String?   @map("duong_kinh")
+  chuVi       String?   @map("chu_vi")
+  trongLuong  String?   @map("trong_luong")
+
+  loai        SanPhamLoai? @relation("SanPhamToLoai", fields: [idLoai], references: [id])
+  hinhAnhs    SanPhamHinh[]
+
+  @@map("san_pham")
+}
+
+// ===== HÌNH SẢN PHẨM =====
+model SanPhamHinh {
+  id      Int     @id @default(autoincrement()) @map("id")
+  idSP    Int?    @map("id_sp")
+  thuTu   Int?    @map("thu_tu")
+  url     String? @map("url")
+  tenHinh String? @map("ten_hinh")
+
+  sanPham SanPham? @relation(fields: [idSP], references: [id])
+
+  @@map("san_pham_hinh")
+}
+
+// ===== DANH MỤC BÀI VIẾT =====
+model BaiVietLoai {
+  id        Int       @id @default(autoincrement()) @map("id")
+  thuTu     Int?      @map("thu_tu")
+  tenLoai   String?   @map("ten_loai")
+  hienThi   Int?      @default(1) @map("hien_thi")
+  hieuLuc   Int?      @default(1) @map("hieu_luc")
+  idCha     Int?      @map("id_cha")
+  url       String?   @map("url")
+  ngay      DateTime? @default(now()) @map("ngay")
+  hinhAnh   String?   @map("hinh_anh")
+  noiDung   String?   @map("noi_dung")
+  tinNoiBat Int?      @default(0) @map("tin_noi_bat")
+  tuKhoa1   String?   @map("tu_khoa_1")
+  timKiem   String?   @map("tim_kiem")
+  soLanXem  Int?      @default(0) @map("so_lan_xem")
+
+  baiViets  BaiViet[]
+  cha       BaiVietLoai?  @relation("BaiVietLoaiCha", fields: [idCha], references: [id])
+  conCai    BaiVietLoai[] @relation("BaiVietLoaiCha")
+
+  @@map("bai_viet_loai")
+}
+
+// ===== BÀI VIẾT / TIN TỨC =====
+model BaiViet {
+  id        Int       @id @default(autoincrement()) @map("id")
+  idLoai    Int?      @map("id_loai")
+  thuTu     Int?      @map("thu_tu")
+  tieuDe    String?   @map("tieu_de")
+  hinhNho   String?   @map("hinh_nho")
+  hinhLon   String?   @map("hinh_lon")
+  tomTat    String?   @map("tom_tat")
+  noiDung   String?   @map("noi_dung")
+  hienThi   Int?      @default(1) @map("hien_thi")
+  hieuLuc   Int?      @default(1) @map("hieu_luc")
+  tinNoiBat Int?      @default(0) @map("tin_noi_bat")
+  soLanXem  Int?      @default(0) @map("so_lan_xem")
+  ngay      DateTime? @default(now()) @map("ngay")
+  tuKhoa1   String?   @map("tu_khoa_1")
+  tuKhoa2   String?   @map("tu_khoa_2")
+  tags      String?   @map("tags")
+  link      String?   @map("link")
+  timKiem   String?   @map("tim_kiem")
+  tacGia    String?   @map("tac_gia")
+  urlVideo  String?   @map("url_video")
+
+  loai      BaiVietLoai? @relation(fields: [idLoai], references: [id])
+
+  @@map("bai_viet")
+}
+
+// ===== BANNER SLIDE =====
+model BannerSlide {
+  id      Int     @id @default(autoincrement()) @map("id")
+  idLoai  Int?    @map("id_loai")
+  thuTu   Int?    @map("thu_tu")
+  tenHinh String? @map("ten_hinh")
+  url     String? @map("url")
+  link    String? @map("link")
+  tomTat  String? @map("tom_tat")
+  noiDung String? @map("noi_dung")
+
+  @@map("banner_slide")
+}
+
+// ===== LIÊN HỆ KHÁCH HÀNG (form gửi đến) =====
+model LienHeKH {
+  id        Int       @id @default(autoincrement()) @map("id")
+  idLoai    Int?      @map("id_loai")
+  tenKH     String?   @map("ten_kh")
+  diaChi    String?   @map("dia_chi")
+  dienThoai String?   @map("dien_thoai")
+  email     String?   @map("email")
+  tieuDe    String?   @map("tieu_de")
+  noiDung   String?   @map("noi_dung")
+  ngay      DateTime? @default(now()) @map("ngay")
+  status    Int?      @default(0) @map("status")
+
+  @@map("lien_he_kh")
+}
+
+// ===== PANEL / QUẢNG CÁO =====
+model Panel {
+  id      Int     @id @default(autoincrement()) @map("id")
+  idLoai  Int?    @map("id_loai")
+  thuTu   Int?    @map("thu_tu")
+  tenHinh String? @map("ten_hinh")
+  link    String? @map("link")
+  url     String? @map("url")
+  rong    Int?    @map("rong")
+  cao     Int?    @map("cao")
+  hienThi Int?    @default(1) @map("hien_thi")
+  hieuLuc Int?    @default(1) @map("hieu_luc")
+
+  @@map("panel")
+}
+
+// ===== CẤU HÌNH WEBSITE =====
+model CauHinh {
+  id       Int     @id @default(autoincrement()) @map("id")
+  khoa     String  @unique @map("khoa")
+  giaTri   String? @map("gia_tri")
+  ghiChu   String? @map("ghi_chu")
+
+  @@map("cau_hinh")
+}

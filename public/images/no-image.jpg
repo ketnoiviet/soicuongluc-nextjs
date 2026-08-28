@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f5f7fa"/>
+  <rect x="150" y="100" width="100" height="80" rx="8" fill="#dde1e7"/>
+  <circle cx="170" cy="125" r="12" fill="#c5cdd8"/>
+  <polygon points="145,180 185,135 220,165 250,140 305,180" fill="#c5cdd8"/>
+  <text x="200" y="220" text-anchor="middle" font-family="Arial" font-size="13" fill="#8892a0">Không có hình ảnh</text>
+</svg>
