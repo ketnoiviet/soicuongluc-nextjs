@@ -11,12 +11,12 @@ export async function POST(request: Request) {
     }
 
     // Lưu vào database
-    const record = await prisma.lienHeKH.create({
+    const record = await prisma.contactSubmission.create({
       data: {
-        tenKH, dienThoai, email: email || null,
-        diaChi: diaChi || null, tieuDe: tieuDe || 'Liên hệ từ website',
-        noiDung, idLoai: idLoai || 1, status: 0,
-        ngay: new Date(),
+        fullName: tenKH, phoneNumber: dienThoai, email: email || null,
+        address: diaChi || null, subject: tieuDe || 'Liên hệ từ website',
+        message: noiDung, inquiryType: idLoai === 2 ? 'QUOTE_REQUEST' : 'GENERAL_CONTACT', status: 'PENDING',
+        createdAt: new Date(),
       },
     })
 

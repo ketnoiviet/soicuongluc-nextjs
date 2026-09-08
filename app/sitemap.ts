@@ -5,9 +5,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://soicuongluc.com'
 
   const [categories, products, articles] = await Promise.all([
-    prisma.sanPhamLoai.findMany({ where: { hieuLuc: 1 }, select: { url: true } }),
-    prisma.sanPham.findMany({ where: { hieuLuc: 1 }, select: { link: true, ngay: true } }),
-    prisma.baiViet.findMany({ where: { hieuLuc: 1 }, select: { link: true, ngay: true } }),
+    prisma.productCategory.findMany({ where: { status: 'PUBLISHED' }, select: { slug: true } }),
+    prisma.product.findMany({ where: { status: 'PUBLISHED' }, select: { slug: true, createdAt: true } }),
+    prisma.newsArticle.findMany({ where: { status: 'PUBLISHED' }, select: { slug: true, publishedAt: true } }),
   ])
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -19,16 +19,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   const categoryPages: MetadataRoute.Sitemap = categories
-    .filter(c => c.url)
-    .map(c => ({ url: `${baseUrl}/san-pham/${c.url}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 }))
+    .filter((c) => c.slug)
+    .map((c) => ({ url: `${baseUrl}/san-pham/${c.slug}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.9 }))
 
   const productPages: MetadataRoute.Sitemap = products
-    .filter(p => p.link)
-    .map(p => ({ url: `${baseUrl}/san-pham/chi-tiet/${p.link}`, lastModified: p.ngay || new Date(), changeFrequency: 'monthly' as const, priority: 0.7 }))
+    .filter((p) => p.slug)
+    .map((p) => ({ url: `${baseUrl}/san-pham/chi-tiet/${p.slug}`, lastModified: p.createdAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.7 }))
 
   const articlePages: MetadataRoute.Sitemap = articles
-    .filter(a => a.link)
-    .map(a => ({ url: `${baseUrl}/tin-tuc/${a.link}`, lastModified: a.ngay || new Date(), changeFrequency: 'monthly' as const, priority: 0.6 }))
+    .filter((a) => a.slug)
+    .map((a) => ({ url: `${baseUrl}/tin-tuc/${a.slug}`, lastModified: a.publishedAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.6 }))
 
   return [...staticPages, ...categoryPages, ...productPages, ...articlePages]
 }

@@ -1,98 +1,109 @@
-// prisma/seed.js - Dữ liệu thực tế từ SQL Server
+// prisma/seed.js - Dữ liệu thực tế (schema chuẩn hoá v2)
 const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding database...')
 
   // ===== CẤU HÌNH WEBSITE =====
-  await prisma.cauHinh.createMany({
+  await prisma.siteSetting.createMany({
     data: [
-      { khoa: 'ten_cong_ty', giaTri: 'Công ty TNHH SXTMDV HARIFA', ghiChu: 'Tên công ty' },
-      { khoa: 'dien_thoai', giaTri: '0916666779', ghiChu: 'Điện thoại' },
-      { khoa: 'zalo', giaTri: '0916666779', ghiChu: 'Zalo' },
-      { khoa: 'email', giaTri: 'sales@harifavn.com', ghiChu: 'Email' },
-      { khoa: 'dia_chi_hcm', giaTri: 'Số 154 Phạm Phú Thứ, Phường Bảy Hiền, TP Hồ Chí Minh', ghiChu: 'Văn phòng HCM' },
-      { khoa: 'dia_chi_hn', giaTri: 'Số 96, Lô F4, KĐT Đại Kim - Định Công, Phường Định Công, TP Hà Nội', ghiChu: 'Văn phòng HN' },
-      { khoa: 'dia_chi_dn', giaTri: 'Số 06, Đường Thái Thị Bôi, Xã Nam Phước, TP Đà Nẵng', ghiChu: 'Văn phòng ĐN' },
-      { khoa: 'kho_hang', giaTri: 'Số 27/71 Xuân Thới Thượng 59, Ấp 7, Xã Bà Điểm, TP Hồ Chí Minh', ghiChu: 'Tổng kho' },
-      { khoa: 'facebook', giaTri: 'https://www.facebook.com/thegioisoidet', ghiChu: 'Facebook' },
-      { khoa: 'youtube', giaTri: 'https://www.youtube.com/', ghiChu: 'Youtube' },
-      { khoa: 'website', giaTri: 'soicuongluc.com', ghiChu: 'Website' },
-      { khoa: 'meta_title', giaTri: 'Sợi cường lực | Soicuongluc.com', ghiChu: 'Meta title' },
-      { khoa: 'meta_desc', giaTri: 'HARIFA Nhà Phân Phối Chính Hãng Sợi cường lực uy tín và chất lượng', ghiChu: 'Meta description' },
-    ]
-    
+      { key: 'ten_cong_ty', value: 'Công ty TNHH SXTMDV HARIFA', description: 'Tên công ty' },
+      { key: 'dien_thoai', value: '0916666779', description: 'Điện thoại' },
+      { key: 'zalo', value: '0916666779', description: 'Zalo' },
+      { key: 'email', value: 'sales@harifavn.com', description: 'Email' },
+      { key: 'dia_chi_hcm', value: 'Số 154 Phạm Phú Thứ, Phường Bảy Hiền, TP Hồ Chí Minh', description: 'Văn phòng HCM' },
+      { key: 'dia_chi_hn', value: 'Số 96, Lô F4, KĐT Đại Kim - Định Công, Phường Định Công, TP Hà Nội', description: 'Văn phòng HN' },
+      { key: 'dia_chi_dn', value: 'Số 06, Đường Thái Thị Bôi, Xã Nam Phước, TP Đà Nẵng', description: 'Văn phòng ĐN' },
+      { key: 'kho_hang', value: 'Số 27/71 Xuân Thới Thượng 59, Ấp 7, Xã Bà Điểm, TP Hồ Chí Minh', description: 'Tổng kho' },
+      { key: 'facebook', value: 'https://www.facebook.com/thegioisoidet', description: 'Facebook' },
+      { key: 'youtube', value: 'https://www.youtube.com/', description: 'Youtube' },
+      { key: 'website', value: 'soicuongluc.com', description: 'Website' },
+      { key: 'meta_title', value: 'Sợi cường lực | Soicuongluc.com', description: 'Meta title' },
+      { key: 'meta_desc', value: 'HARIFA Nhà Phân Phối Chính Hãng Sợi cường lực uy tín và chất lượng', description: 'Meta description' },
+    ],
   })
 
   // ===== BANNER SLIDE =====
   await prisma.bannerSlide.createMany({
     data: [
-      { idLoai: 1, thuTu: 1, url: '/uploads/hinhanh/Slide_1.jpg', link: '/', tomTat: '' },
-      { idLoai: 1, thuTu: 2, url: '/uploads/hinhanh/Slide_2.jpg', link: '/', tomTat: '' },
-      { idLoai: 1, thuTu: 3, url: '/uploads/hinhanh/Slide_3.jpg', link: '/', tomTat: '' },
-      { idLoai: 1, thuTu: 4, url: '/uploads/hinhanh/Slide_4.jpg', link: '/', tomTat: '' },
-      { idLoai: 1, thuTu: 5, url: '/uploads/hinhanh/Slide_55.jpg', link: '/', tomTat: '' },
-    ]
+      { sortOrder: 1, imageUrl: '/uploads/hinhanh/Slide_1.jpg', linkUrl: '/', caption: '' },
+      { sortOrder: 2, imageUrl: '/uploads/hinhanh/Slide_2.jpg', linkUrl: '/', caption: '' },
+      { sortOrder: 3, imageUrl: '/uploads/hinhanh/Slide_3.jpg', linkUrl: '/', caption: '' },
+      { sortOrder: 4, imageUrl: '/uploads/hinhanh/Slide_4.jpg', linkUrl: '/', caption: '' },
+      { sortOrder: 5, imageUrl: '/uploads/hinhanh/Slide_55.jpg', linkUrl: '/', caption: '' },
+    ],
   })
 
   // ===== DANH MỤC SẢN PHẨM =====
-  const loaiSP = await prisma.sanPhamLoai.createMany({
+  await prisma.productCategory.createMany({
     data: [
-      { id: 1, thuTu: 1, tenLoai: 'Sợi polyester cường lực', hinhAnh: '/uploads/hinhanh/1_soi_polyester_13775202534010_s_.jpg', url: 'soi-polyester-cuong-luc', hieuLuc: 1, cap: 1 },
-      { id: 2, thuTu: 2, tenLoai: 'Sợi nylon cường lực', hinhAnh: '/uploads/hinhanh/2_soi_nylon_13553202534010_s_.jpg', url: 'soi-nylon-cuong-luc', hieuLuc: 1, cap: 1 },
-      { id: 3, thuTu: 3, tenLoai: 'Sợi carbon', hinhAnh: '/uploads/hinhanh/3_soi_carbon_13824202534110_s_.jpg', url: 'soi-carbon', hieuLuc: 1, cap: 1 },
-      { id: 4, thuTu: 4, tenLoai: 'Lốp xe & vật liệu gia cố công nghiệp PU', hinhAnh: '/uploads/hinhanh/4_soi_polyester_13145202534110_s_.jpg', url: 'lop-xe-vat-lieu-gia-co-cong-nghiep-pu', hieuLuc: 1, cap: 1 },
-    ]
+      { id: 1, sortOrder: 1, name: 'Sợi polyester cường lực', imageUrl: '/uploads/hinhanh/1_soi_polyester_13775202534010_s_.jpg', slug: 'soi-polyester-cuong-luc', status: 'PUBLISHED', level: 1 },
+      { id: 2, sortOrder: 2, name: 'Sợi nylon cường lực', imageUrl: '/uploads/hinhanh/2_soi_nylon_13553202534010_s_.jpg', slug: 'soi-nylon-cuong-luc', status: 'PUBLISHED', level: 1 },
+      { id: 3, sortOrder: 3, name: 'Sợi carbon', imageUrl: '/uploads/hinhanh/3_soi_carbon_13824202534110_s_.jpg', slug: 'soi-carbon', status: 'PUBLISHED', level: 1 },
+      { id: 4, sortOrder: 4, name: 'Lốp xe & vật liệu gia cố công nghiệp PU', imageUrl: '/uploads/hinhanh/4_soi_polyester_13145202534110_s_.jpg', slug: 'lop-xe-vat-lieu-gia-co-cong-nghiep-pu', status: 'PUBLISHED', level: 1 },
+    ],
   })
 
   // ===== SẢN PHẨM (15 sản phẩm thực từ DB) =====
-  await prisma.sanPham.createMany({
+  await prisma.product.createMany({
     data: [
-      { id: 1, idLoai: 1, thuTu: 5, tenSP: 'Sợi Polyester Tenacity Yarn', hinhNho: '/uploads/hinhsp/soi_polyester_tenacity_s.jpg', hinhLon: '/uploads/hinhsp/soi_polyester_tenacity_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-polyester-tenacity-yarn-1' },
-      { id: 2, idLoai: 1, thuTu: 4, tenSP: 'Sợi Polyester Modulus Shrinkage Yarn', hinhNho: '/uploads/hinhsp/soi_polyester_modulus_s.jpg', hinhLon: '/uploads/hinhsp/soi_polyester_modulus_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-polyester-modulus-shrinkage-yarn-2' },
-      { id: 3, idLoai: 1, thuTu: 3, tenSP: 'Sợi Polyester Shrinkage Yarn', hinhNho: '/uploads/hinhsp/soi_polyester_shrinkage_s.jpg', hinhLon: '/uploads/hinhsp/soi_polyester_shrinkage_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-polyester-shrinkage-yarn-3' },
-      { id: 4, idLoai: 1, thuTu: 2, tenSP: 'Sợi Polyester Adhesive Activated Yarn', hinhNho: '/uploads/hinhsp/soi_polyester_adhesive_s.jpg', hinhLon: '/uploads/hinhsp/soi_polyester_adhesive_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 0, link: 'soi-polyester-adhesive-activated-yarn-4' },
-      { id: 5, idLoai: 1, thuTu: 1, tenSP: 'Sợi Polyester Wick Yarn', hinhNho: '/uploads/hinhsp/soi_polyester_wick_s.jpg', hinhLon: '/uploads/hinhsp/soi_polyester_wick_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 0, link: 'soi-polyester-wick-yarn-5' },
-      { id: 7, idLoai: 2, thuTu: 2, tenSP: 'Sợi Nylon 6 Tenacity Yarn', hinhNho: '/uploads/hinhsp/soi_nylon6_tenacity_s.jpg', hinhLon: '/uploads/hinhsp/soi_nylon6_tenacity_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-nylon-6-tenacity-yarn-7' },
-      { id: 8, idLoai: 2, thuTu: 1, tenSP: 'Sợi Nylon 66 Tenacity Yarn', hinhNho: '/uploads/hinhsp/soi_nylon66_tenacity_s.jpg', hinhLon: '/uploads/hinhsp/soi_nylon66_tenacity_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-nylon-66-tenacity-yarn-8' },
-      { id: 9, idLoai: 2, thuTu: 3, tenSP: 'Sợi Nylon Chainlon', hinhNho: '/uploads/hinhsp/soi_nylon_chainlon_s.jpg', hinhLon: '/uploads/hinhsp/soi_nylon_chainlon_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 0, link: 'soi-nylon-chainlon-9' },
-      { id: 10, idLoai: 3, thuTu: 3, tenSP: 'Sợi carbon mô đun chuẩn', hinhNho: '/uploads/hinhsp/soi_carbon_modun_chuan_s.jpg', hinhLon: '/uploads/hinhsp/soi_carbon_modun_chuan_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-carbon-mo-dun-chuan-10' },
-      { id: 11, idLoai: 3, thuTu: 2, tenSP: 'Sợi carbon mô đun trung gian', hinhNho: '/uploads/hinhsp/soi_carbon_modun_trunggian_s.jpg', hinhLon: '/uploads/hinhsp/soi_carbon_modun_trunggian_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-carbon-mo-dun-trung-gian-11' },
-      { id: 12, idLoai: 3, thuTu: 1, tenSP: 'Sợi carbon có độ bền kéo cực cao', hinhNho: '/uploads/hinhsp/soi_carbon_dobenkeo_s.jpg', hinhLon: '/uploads/hinhsp/soi_carbon_dobenkeo_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'soi-carbon-co-do-ben-keo-cuc-cao-12' },
-      { id: 13, idLoai: 3, thuTu: 4, tenSP: 'Sợi Aramid (ALKEX)', hinhNho: '/uploads/hinhsp/soi_aramid_alkex_s.jpg', hinhLon: '/uploads/hinhsp/soi_aramid_alkex_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 0, link: 'soi-aramid-alkex-13' },
-      { id: 14, idLoai: 4, thuTu: 3, tenSP: 'PET và NYLON Tire Cord', hinhNho: '/uploads/hinhsp/tire_cord_s.jpg', hinhLon: '/uploads/hinhsp/tire_cord_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'pet-va-nylon-tire-cord-14' },
-      { id: 15, idLoai: 4, thuTu: 2, tenSP: 'Steel Cord', hinhNho: '/uploads/hinhsp/steel_cord_s.jpg', hinhLon: '/uploads/hinhsp/steel_cord_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 1, link: 'steel-cord-15' },
-      { id: 16, idLoai: 4, thuTu: 1, tenSP: 'Bead wire', hinhNho: '/uploads/hinhsp/bead_wire_s.jpg', hinhLon: '/uploads/hinhsp/bead_wire_b.jpg', hieuLuc: 1, hienThi: 1, spTieuBieu: 0, link: 'bead-wire-16' },
-    ]
+      { id: 1, categoryId: 1, sortOrder: 5, name: 'Sợi Polyester Tenacity Yarn', thumbnailUrl: '/uploads/hinhsp/soi_polyester_tenacity_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_polyester_tenacity_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-polyester-tenacity-yarn-1' },
+      { id: 2, categoryId: 1, sortOrder: 4, name: 'Sợi Polyester Modulus Shrinkage Yarn', thumbnailUrl: '/uploads/hinhsp/soi_polyester_modulus_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_polyester_modulus_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-polyester-modulus-shrinkage-yarn-2' },
+      { id: 3, categoryId: 1, sortOrder: 3, name: 'Sợi Polyester Shrinkage Yarn', thumbnailUrl: '/uploads/hinhsp/soi_polyester_shrinkage_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_polyester_shrinkage_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-polyester-shrinkage-yarn-3' },
+      { id: 4, categoryId: 1, sortOrder: 2, name: 'Sợi Polyester Adhesive Activated Yarn', thumbnailUrl: '/uploads/hinhsp/soi_polyester_adhesive_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_polyester_adhesive_b.jpg', status: 'PUBLISHED', isFeatured: false, slug: 'soi-polyester-adhesive-activated-yarn-4' },
+      { id: 5, categoryId: 1, sortOrder: 1, name: 'Sợi Polyester Wick Yarn', thumbnailUrl: '/uploads/hinhsp/soi_polyester_wick_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_polyester_wick_b.jpg', status: 'PUBLISHED', isFeatured: false, slug: 'soi-polyester-wick-yarn-5' },
+      { id: 7, categoryId: 2, sortOrder: 2, name: 'Sợi Nylon 6 Tenacity Yarn', thumbnailUrl: '/uploads/hinhsp/soi_nylon6_tenacity_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_nylon6_tenacity_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-nylon-6-tenacity-yarn-7' },
+      { id: 8, categoryId: 2, sortOrder: 1, name: 'Sợi Nylon 66 Tenacity Yarn', thumbnailUrl: '/uploads/hinhsp/soi_nylon66_tenacity_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_nylon66_tenacity_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-nylon-66-tenacity-yarn-8' },
+      { id: 9, categoryId: 2, sortOrder: 3, name: 'Sợi Nylon Chainlon', thumbnailUrl: '/uploads/hinhsp/soi_nylon_chainlon_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_nylon_chainlon_b.jpg', status: 'PUBLISHED', isFeatured: false, slug: 'soi-nylon-chainlon-9' },
+      { id: 10, categoryId: 3, sortOrder: 3, name: 'Sợi carbon mô đun chuẩn', thumbnailUrl: '/uploads/hinhsp/soi_carbon_modun_chuan_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_carbon_modun_chuan_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-carbon-mo-dun-chuan-10' },
+      { id: 11, categoryId: 3, sortOrder: 2, name: 'Sợi carbon mô đun trung gian', thumbnailUrl: '/uploads/hinhsp/soi_carbon_modun_trunggian_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_carbon_modun_trunggian_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-carbon-mo-dun-trung-gian-11' },
+      { id: 12, categoryId: 3, sortOrder: 1, name: 'Sợi carbon có độ bền kéo cực cao', thumbnailUrl: '/uploads/hinhsp/soi_carbon_dobenkeo_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_carbon_dobenkeo_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'soi-carbon-co-do-ben-keo-cuc-cao-12' },
+      { id: 13, categoryId: 3, sortOrder: 4, name: 'Sợi Aramid (ALKEX)', thumbnailUrl: '/uploads/hinhsp/soi_aramid_alkex_s.jpg', coverImageUrl: '/uploads/hinhsp/soi_aramid_alkex_b.jpg', status: 'PUBLISHED', isFeatured: false, slug: 'soi-aramid-alkex-13' },
+      { id: 14, categoryId: 4, sortOrder: 3, name: 'PET và NYLON Tire Cord', thumbnailUrl: '/uploads/hinhsp/tire_cord_s.jpg', coverImageUrl: '/uploads/hinhsp/tire_cord_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'pet-va-nylon-tire-cord-14' },
+      { id: 15, categoryId: 4, sortOrder: 2, name: 'Steel Cord', thumbnailUrl: '/uploads/hinhsp/steel_cord_s.jpg', coverImageUrl: '/uploads/hinhsp/steel_cord_b.jpg', status: 'PUBLISHED', isFeatured: true, slug: 'steel-cord-15' },
+      { id: 16, categoryId: 4, sortOrder: 1, name: 'Bead wire', thumbnailUrl: '/uploads/hinhsp/bead_wire_s.jpg', coverImageUrl: '/uploads/hinhsp/bead_wire_b.jpg', status: 'PUBLISHED', isFeatured: false, slug: 'bead-wire-16' },
+    ],
   })
 
   // ===== DANH MỤC BÀI VIẾT =====
-  await prisma.baiVietLoai.createMany({
+  await prisma.newsCategory.createMany({
     data: [
-      { id: 1, thuTu: 1, tenLoai: 'Giới thiệu', url: 'gioi-thieu', hieuLuc: 1 },
-      { id: 2, thuTu: 2, tenLoai: 'Công ty TNHH Harifa', url: 'cong-ty', hieuLuc: 1 },
-      { id: 3, thuTu: 3, tenLoai: 'Tin tức', url: 'tin-tuc', hieuLuc: 1 },
-      { id: 4, thuTu: 4, tenLoai: 'Hình ảnh', url: 'hinh-anh', hieuLuc: 1 },
-      { id: 5, thuTu: 5, tenLoai: 'Video clip', url: 'video', hieuLuc: 1 },
-      { id: 6, thuTu: 6, tenLoai: 'Đặc tính', url: 'dac-tinh', hieuLuc: 1 },
-      { id: 7, thuTu: 7, tenLoai: 'Ứng dụng', url: 'ung-dung', hieuLuc: 1 },
-    ]
+      { id: 1, sortOrder: 1, name: 'Giới thiệu', slug: 'gioi-thieu', status: 'PUBLISHED' },
+      { id: 2, sortOrder: 2, name: 'Công ty TNHH Harifa', slug: 'cong-ty', status: 'PUBLISHED' },
+      { id: 3, sortOrder: 3, name: 'Tin tức', slug: 'tin-tuc', status: 'PUBLISHED' },
+      { id: 4, sortOrder: 4, name: 'Hình ảnh', slug: 'hinh-anh', status: 'PUBLISHED' },
+      { id: 5, sortOrder: 5, name: 'Video clip', slug: 'video', status: 'PUBLISHED' },
+      { id: 6, sortOrder: 6, name: 'Đặc tính', slug: 'dac-tinh', status: 'PUBLISHED' },
+      { id: 7, sortOrder: 7, name: 'Ứng dụng', slug: 'ung-dung', status: 'PUBLISHED' },
+    ],
   })
 
-  // ===== BÀI VIẾT / TIN TỨC (13 bài thực từ DB) =====
-  await prisma.baiViet.createMany({
+  // ===== BÀI VIẾT / TIN TỨC (8 bài thực từ DB) =====
+  await prisma.newsArticle.createMany({
     data: [
-      { id: 1, idLoai: 3, thuTu: 1, tieuDe: 'So sánh Sợi Carbon với Sợi Aramid', hinhNho: '/uploads/hinhanh/carbon_fiber_1_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_1_b.jpg', tomTat: 'Sợi carbon và sợi aramid là hai loại sợi hiệu suất cao phổ biến. Chúng được sử dụng trong nhiều ứng dụng công nghiệp đòi hỏi độ bền cao.', hieuLuc: 1, hienThi: 1, link: 'so-sanh-soi-carbon-voi-soi-aramid-1', ngay: new Date('2025-03-10') },
-      { id: 2, idLoai: 3, thuTu: 2, tieuDe: 'Sợi Carbon Trong Cuộc Sống Hàng Ngày', hinhNho: '/uploads/hinhanh/carbon_fiber_2_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_2_b.jpg', tomTat: 'Khám phá những ứng dụng thú vị của sợi carbon trong cuộc sống hàng ngày, từ xe đạp đến thiết bị thể thao và nhiều hơn nữa.', hieuLuc: 1, hienThi: 1, link: 'soi-carbon-trong-cuoc-song-hang-ngay-2', ngay: new Date('2025-03-12') },
-      { id: 3, idLoai: 3, thuTu: 3, tieuDe: 'Quy mô và xu hướng thị trường sợi carbon', hinhNho: '/uploads/hinhanh/carbon_fiber_3_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_3_b.jpg', tomTat: 'Phân tích quy mô thị trường sợi carbon toàn cầu và các xu hướng phát triển trong những năm tới.', hieuLuc: 1, hienThi: 1, link: 'quy-mo-va-xu-huong-thi-truong-soi-carbon-3', ngay: new Date('2025-03-15') },
-      { id: 4, idLoai: 3, thuTu: 4, tieuDe: 'Sợi Carbon Trong Cuộc Sống Hàng Ngày - Phần 1', hinhNho: '/uploads/hinhanh/carbon_fiber_4_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_4_b.jpg', tomTat: 'Phần 1: Tìm hiểu về sợi carbon và những đặc tính vượt trội khiến nó trở thành vật liệu của tương lai.', hieuLuc: 1, hienThi: 1, link: 'soi-carbon-trong-cuoc-song-hang-ngay-phan-1-4', ngay: new Date('2025-03-18') },
-      { id: 5, idLoai: 3, thuTu: 5, tieuDe: 'Ứng dụng của sợi Carbon trong cuộc sống hàng ngày', hinhNho: '/uploads/hinhanh/carbon_fiber_5_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_5_b.jpg', tomTat: 'Từ hàng không vũ trụ đến thiết bị y tế, sợi carbon đang cách mạng hóa nhiều ngành công nghiệp.', hieuLuc: 1, hienThi: 1, link: 'ung-dung-cua-soi-carbon-trong-cuoc-song-hang-ngay-5', ngay: new Date('2025-03-20') },
-      { id: 6, idLoai: 3, thuTu: 6, tieuDe: 'Sợi carbon: Thế hệ vật liệu xây dựng tiếp theo?', hinhNho: '/uploads/hinhanh/carbon_fiber_6_s.jpg', hinhLon: '/uploads/hinhanh/carbon_fiber_6_b.jpg', tomTat: 'Ngành xây dựng đang chú ý đến sợi carbon như một giải pháp thay thế cho thép, nhờ trọng lượng nhẹ và độ bền cao.', hieuLuc: 1, hienThi: 1, link: 'soi-carbon-the-he-vat-lieu-xay-dung-tiep-theo-6', ngay: new Date('2025-03-25') },
-      { id: 11, idLoai: 3, thuTu: 7, tieuDe: 'Báo cáo về quy mô thị trường sợi nylon 66 Airbag toàn cầu', hinhNho: '/uploads/hinhanh/airbag_nylon66_s.jpg', hinhLon: '/uploads/hinhanh/airbag_nylon66_b.jpg', tomTat: 'Thị trường sợi nylon 66 airbag toàn cầu đang tăng trưởng mạnh mẽ nhờ nhu cầu an toàn xe hơi ngày càng cao.', hieuLuc: 1, hienThi: 1, link: 'bao-cao-thi-truong-soi-nylon-66-airbag-toan-cau-11', ngay: new Date('2025-04-01') },
-      { id: 12, idLoai: 3, thuTu: 8, tieuDe: 'Báo cáo về quy mô thị trường dây tanh lốp xe toàn cầu', hinhNho: '/uploads/hinhanh/bead_wire_market_s.jpg', hinhLon: '/uploads/hinhanh/bead_wire_market_b.jpg', tomTat: 'Thị trường dây tanh lốp xe (bead wire) toàn cầu được dự báo tăng trưởng ổn định trong thập kỷ tới.', hieuLuc: 1, hienThi: 1, link: 'bao-cao-thi-truong-day-tanh-lop-xe-toan-cau-12', ngay: new Date('2025-04-05') },
-    ]
+      { id: 1, categoryId: 3, sortOrder: 1, title: 'So sánh Sợi Carbon với Sợi Aramid', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_1_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_1_b.jpg', excerpt: 'Sợi carbon và sợi aramid là hai loại sợi hiệu suất cao phổ biến. Chúng được sử dụng trong nhiều ứng dụng công nghiệp đòi hỏi độ bền cao.', status: 'PUBLISHED', slug: 'so-sanh-soi-carbon-voi-soi-aramid-1', publishedAt: new Date('2025-03-10') },
+      { id: 2, categoryId: 3, sortOrder: 2, title: 'Sợi Carbon Trong Cuộc Sống Hàng Ngày', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_2_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_2_b.jpg', excerpt: 'Khám phá những ứng dụng thú vị của sợi carbon trong cuộc sống hàng ngày, từ xe đạp đến thiết bị thể thao và nhiều hơn nữa.', status: 'PUBLISHED', slug: 'soi-carbon-trong-cuoc-song-hang-ngay-2', publishedAt: new Date('2025-03-12') },
+      { id: 3, categoryId: 3, sortOrder: 3, title: 'Quy mô và xu hướng thị trường sợi carbon', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_3_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_3_b.jpg', excerpt: 'Phân tích quy mô thị trường sợi carbon toàn cầu và các xu hướng phát triển trong những năm tới.', status: 'PUBLISHED', slug: 'quy-mo-va-xu-huong-thi-truong-soi-carbon-3', publishedAt: new Date('2025-03-15') },
+      { id: 4, categoryId: 3, sortOrder: 4, title: 'Sợi Carbon Trong Cuộc Sống Hàng Ngày - Phần 1', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_4_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_4_b.jpg', excerpt: 'Phần 1: Tìm hiểu về sợi carbon và những đặc tính vượt trội khiến nó trở thành vật liệu của tương lai.', status: 'PUBLISHED', slug: 'soi-carbon-trong-cuoc-song-hang-ngay-phan-1-4', publishedAt: new Date('2025-03-18') },
+      { id: 5, categoryId: 3, sortOrder: 5, title: 'Ứng dụng của sợi Carbon trong cuộc sống hàng ngày', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_5_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_5_b.jpg', excerpt: 'Từ hàng không vũ trụ đến thiết bị y tế, sợi carbon đang cách mạng hóa nhiều ngành công nghiệp.', status: 'PUBLISHED', slug: 'ung-dung-cua-soi-carbon-trong-cuoc-song-hang-ngay-5', publishedAt: new Date('2025-03-20') },
+      { id: 6, categoryId: 3, sortOrder: 6, title: 'Sợi carbon: Thế hệ vật liệu xây dựng tiếp theo?', thumbnailUrl: '/uploads/hinhanh/carbon_fiber_6_s.jpg', coverImageUrl: '/uploads/hinhanh/carbon_fiber_6_b.jpg', excerpt: 'Ngành xây dựng đang chú ý đến sợi carbon như một giải pháp thay thế cho thép, nhờ trọng lượng nhẹ và độ bền cao.', status: 'PUBLISHED', slug: 'soi-carbon-the-he-vat-lieu-xay-dung-tiep-theo-6', publishedAt: new Date('2025-03-25') },
+      { id: 11, categoryId: 3, sortOrder: 7, title: 'Báo cáo về quy mô thị trường sợi nylon 66 Airbag toàn cầu', thumbnailUrl: '/uploads/hinhanh/airbag_nylon66_s.jpg', coverImageUrl: '/uploads/hinhanh/airbag_nylon66_b.jpg', excerpt: 'Thị trường sợi nylon 66 airbag toàn cầu đang tăng trưởng mạnh mẽ nhờ nhu cầu an toàn xe hơi ngày càng cao.', status: 'PUBLISHED', slug: 'bao-cao-thi-truong-soi-nylon-66-airbag-toan-cau-11', publishedAt: new Date('2025-04-01') },
+      { id: 12, categoryId: 3, sortOrder: 8, title: 'Báo cáo về quy mô thị trường dây tanh lốp xe toàn cầu', thumbnailUrl: '/uploads/hinhanh/bead_wire_market_s.jpg', coverImageUrl: '/uploads/hinhanh/bead_wire_market_b.jpg', excerpt: 'Thị trường dây tanh lốp xe (bead wire) toàn cầu được dự báo tăng trưởng ổn định trong thập kỷ tới.', status: 'PUBLISHED', slug: 'bao-cao-thi-truong-day-tanh-lop-xe-toan-cau-12', publishedAt: new Date('2025-04-05') },
+    ],
   })
+
+  // ===== TÀI KHOẢN ADMIN MẶC ĐỊNH =====
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@harifavn.com'
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
+  const existAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } })
+  if (!existAdmin) {
+    const hash = await bcrypt.hash(adminPassword, 10)
+    await prisma.adminUser.create({
+      data: { fullName: 'Quản trị viên', email: adminEmail, passwordHash: hash, role: 'ADMIN', isActive: true },
+    })
+  }
 
   console.log('✅ Seed hoàn tất!')
   console.log('   - Cấu hình website: OK')
@@ -101,6 +112,8 @@ async function main() {
   console.log('   - Sản phẩm: 15 sản phẩm')
   console.log('   - Danh mục bài viết: 7 loại')
   console.log('   - Bài viết/Tin tức: 8 bài')
+  console.log(`   - Tài khoản admin: ${adminEmail} / mật khẩu: ${existAdmin ? '(đã tồn tại, giữ nguyên)' : adminPassword}`)
+  console.log('   ⚠️  Hãy đổi mật khẩu ngay sau khi đăng nhập lần đầu!')
 }
 
 main()

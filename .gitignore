@@ -22,6 +22,7 @@ prisma/*.db
 prisma/*.db-journal
 prisma/*.db-shm
 prisma/*.db-wal
+prisma/*.bak
 
 # Debug
 npm-debug.log*
@@ -36,6 +37,15 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local Claude Code tooling (skills/config, not project code)
+.claude/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Self-hosted TinyMCE assets (regenerated from node_modules/tinymce via postinstall)
+public/tinymce/
+
+# Local MCP configuration containing secrets/connection strings
+.mcp.json

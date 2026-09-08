@@ -1,5 +1,24 @@
-// Prisma Schema - Chuyển đổi từ SQL Server sang PostgreSQL
-// soicuongluc.com - HARIFA
+// ============================================================================
+// HARIFA — Schema chuẩn hoá (Phase 2/3 của kế hoạch tái cấu trúc DB)
+//
+// File này là bản THIẾT KẾ MỚI, chưa được áp dụng — không ghi đè
+// prisma/schema.prisma đang chạy dev.db hiện tại. Xem báo cáo audit đầy đủ
+// (đối chiếu từng cột cũ ↔ mới + lý do) tại:
+// https://claude.ai/code/artifact/556a62b8-20ab-47c9-bda3-cc42d9f6c711
+//
+// Naming convention:
+//   - Model: PascalCase số ít               (Product, ProductCategory...)
+//   - Bảng DB (@@map): snake_case số nhiều  (products, product_categories...)
+//   - Field: camelCase                      (categoryId, createdAt...)
+//   - Cột DB (@map): snake_case số ít       (category_id, created_at...)
+//   - Khoá ngoại: <model_singular>Id ORM ↔ <table_singular>_id DB
+//
+// LƯU Ý VỀ ENUM: connector "sqlite" của Prisma KHÔNG hỗ trợ `enum` thật
+// (enum chỉ chạy được trên postgresql/mysql/cockroachdb). Các trường dưới
+// đây đóng vai trò enum đều khai báo kiểu `String` kèm doc-comment liệt kê
+// đầy đủ giá trị hợp lệ — ràng buộc kiểu union ở tầng TypeScript (xem
+// `lib/enums.ts` cần tạo ở bước áp dụng) chứ không phải ở tầng DB.
+// ============================================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -10,199 +29,243 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ===== DANH MỤC SẢN PHẨM =====
-model SanPhamLoai {
-  id         Int       @id @default(autoincrement()) @map("id")
-  thuTu      Int?      @map("thu_tu")
-  tenLoai    String?   @map("ten_loai")
-  hienThi    Int?      @default(1) @map("hien_thi")
-  hieuLuc    Int?      @default(1) @map("hieu_luc")
-  idCha      Int?      @map("id_cha")
-  url        String?   @map("url")
-  ngay       DateTime? @default(now()) @map("ngay")
-  cap        Int?      @map("cap")
-  hinhAnh    String?   @map("hinh_anh")
-  noiDung    String?   @map("noi_dung")
-  tinNoiBat  Int?      @default(0) @map("tin_noi_bat")
-  tuKhoa1    String?   @map("tu_khoa_1")
-  tuKhoa2    String?   @map("tu_khoa_2")
-  tuKhoa3    String?   @map("tu_khoa_3")
-  tomTat     String?   @map("tom_tat")
-  tags       String?   @map("tags")
-  link       String?   @map("link")
-  timKiem    String?   @map("tim_kiem")
-  soLanXem   Int?      @default(0) @map("so_lan_xem")
-  moTa       String?   @map("mo_ta")
+// ============================================================================
+// SẢN PHẨM
+// ============================================================================
 
-  sanPhams   SanPham[] @relation("SanPhamToLoai")
-  cha        SanPhamLoai?  @relation("LoaiSanPhamCha", fields: [idCha], references: [id])
-  conCai     SanPhamLoai[] @relation("LoaiSanPhamCha")
+model ProductCategory {
+  id       Int    @id @default(autoincrement())
+  parentId Int?   @map("parent_id")
+  name     String
+  slug     String @unique
 
-  @@map("sanpham_loai")
+  sortOrder Int @default(0) @map("sort_order")
+  /// Cấp trong cây danh mục (1 = gốc, 2 = con...). Tính lại khi đổi parentId,
+  /// giữ làm cột lưu cứng như bản cũ để không phá vỡ logic orderBy hiện có.
+  level     Int @default(1)
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  /// Thay thế cặp cờ (hien_thi, hieu_luc) cũ — xem giải thích ánh xạ trong báo cáo audit.
+  status String @default("PUBLISHED")
+
+  imageUrl         String? @map("image_url")
+  shortDescription String? @map("short_description")
+  /// Có RichTextEditor ở admin, hiện chưa hiển thị trên trang public —
+  /// giữ lại theo yêu cầu, cần bổ sung UI hiển thị ở phase phát triển sau.
+  descriptionHtml  String? @map("description_html")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent   ProductCategory?  @relation("ProductCategoryTree", fields: [parentId], references: [id])
+  children ProductCategory[] @relation("ProductCategoryTree")
+  products Product[]
+
+  @@map("product_categories")
 }
 
-// ===== SẢN PHẨM =====
-model SanPham {
-  id          Int       @id @default(autoincrement()) @map("id")
-  idLoai      Int?      @map("id_loai")
-  thuTu       Int?      @map("thu_tu")
-  maSP        String?   @map("ma_sp")
-  tenSP       String?   @map("ten_sp")
-  nhaSanXuat  String?   @map("nha_san_xuat")
-  hinhNho     String?   @map("hinh_nho")
-  hinhLon     String?   @map("hinh_lon")
-  moTa        String?   @map("mo_ta")
-  noiDung     String?   @map("noi_dung")
-  tomTat      String?   @map("tom_tat")
-  thongSo     String?   @map("thong_so")
-  ungDung     String?   @map("ung_dung")
-  hienThi     Int?      @default(1) @map("hien_thi")
-  hieuLuc     Int?      @default(1) @map("hieu_luc")
-  spTieuBieu  Int?      @default(0) @map("sp_tieu_bieu")
-  spMoi       Int?      @default(0) @map("sp_moi")
-  spKhuyenMai Int?      @default(0) @map("sp_khuyen_mai")
-  soLanXem    Int?      @default(0) @map("so_lan_xem")
-  ngay        DateTime? @default(now()) @map("ngay")
-  gia         Float?  @map("gia")
-  giaKM       Float?  @map("gia_km")
-  donVi       String?   @map("don_vi")
-  tuKhoa1     String?   @map("tu_khoa_1")
-  tuKhoa2     String?   @map("tu_khoa_2")
-  tuKhoa3     String?   @map("tu_khoa_3")
-  tags        String?   @map("tags")
-  link        String?   @map("link")
-  timKiem     String?   @map("tim_kiem")
-  // Thông số kỹ thuật đặc thù sợi
-  chieuRong   String?   @map("chieu_rong")
-  chieuDai    String?   @map("chieu_dai")
-  chieuCao    String?   @map("chieu_cao")
-  duongKinh  String?   @map("duong_kinh")
-  chuVi       String?   @map("chu_vi")
-  trongLuong  String?   @map("trong_luong")
+model Product {
+  id         Int     @id @default(autoincrement())
+  categoryId Int?    @map("category_id")
+  sortOrder  Int     @default(0) @map("sort_order")
+  /// Mã sản phẩm nội bộ — không hiển thị công khai trên site.
+  sku        String? @unique
+  name       String
+  slug       String  @unique
 
-  loai        SanPhamLoai? @relation("SanPhamToLoai", fields: [idLoai], references: [id])
-  hinhAnhs    SanPhamHinh[]
+  manufacturer String?
 
-  @@map("san_pham")
+  thumbnailUrl       String? @map("thumbnail_url")
+  coverImageUrl      String? @map("cover_image_url")
+  shortDescription   String? @map("short_description")
+  descriptionHtml    String? @map("description_html")
+  specificationsHtml String? @map("specifications_html")
+  applicationsHtml   String? @map("applications_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status     String  @default("PUBLISHED")
+  isFeatured Boolean @default(false) @map("is_featured")
+  isNew      Boolean @default(false) @map("is_new")
+  isOnSale   Boolean @default(false) @map("is_on_sale")
+
+  /// B2B công nghiệp — cố ý không bắt buộc hiển thị giá công khai,
+  /// khách "yêu cầu báo giá" qua ContactSubmission (inquiryType = "QUOTE_REQUEST").
+  price     Float?
+  salePrice Float?  @map("sale_price")
+  unit      String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  category   ProductCategory?   @relation(fields: [categoryId], references: [id])
+  images     ProductImage[]
+  dimensions ProductDimension[]
+
+  @@map("products")
 }
 
-// ===== HÌNH SẢN PHẨM =====
-model SanPhamHinh {
-  id      Int     @id @default(autoincrement()) @map("id")
-  idSP    Int?    @map("id_sp")
-  thuTu   Int?    @map("thu_tu")
-  url     String? @map("url")
-  tenHinh String? @map("ten_hinh")
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int     @map("product_id")
+  sortOrder Int     @default(0) @map("sort_order")
+  imageUrl  String  @map("image_url")
+  altText   String? @map("alt_text")
 
-  sanPham SanPham? @relation(fields: [idSP], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@map("san_pham_hinh")
+  @@map("product_images")
 }
 
-// ===== DANH MỤC BÀI VIẾT =====
-model BaiVietLoai {
-  id        Int       @id @default(autoincrement()) @map("id")
-  thuTu     Int?      @map("thu_tu")
-  tenLoai   String?   @map("ten_loai")
-  hienThi   Int?      @default(1) @map("hien_thi")
-  hieuLuc   Int?      @default(1) @map("hieu_luc")
-  idCha     Int?      @map("id_cha")
-  url       String?   @map("url")
-  ngay      DateTime? @default(now()) @map("ngay")
-  hinhAnh   String?   @map("hinh_anh")
-  noiDung   String?   @map("noi_dung")
-  tinNoiBat Int?      @default(0) @map("tin_noi_bat")
-  tuKhoa1   String?   @map("tu_khoa_1")
-  timKiem   String?   @map("tim_kiem")
-  soLanXem  Int?      @default(0) @map("so_lan_xem")
+/// Bảng con kích thước — 1 sản phẩm có nhiều biến thể kích thước/quy cách.
+/// Thay thế 6 cột rời chieu_rong/chieu_dai/chieu_cao/duong_kinh/chu_vi/trong_luong
+/// trên bảng san_pham cũ. Cố ý chỉ 1 field text tự do (không chuẩn hoá đơn vị).
+model ProductDimension {
+  id        Int    @id @default(autoincrement())
+  productId Int    @map("product_id")
+  sortOrder Int    @default(0) @map("sort_order")
+  /// VD: "Φ 1.5mm × 100m/cuộn"
+  value     String
 
-  baiViets  BaiViet[]
-  cha       BaiVietLoai?  @relation("BaiVietLoaiCha", fields: [idCha], references: [id])
-  conCai    BaiVietLoai[] @relation("BaiVietLoaiCha")
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@map("bai_viet_loai")
+  @@map("product_dimensions")
 }
 
-// ===== BÀI VIẾT / TIN TỨC =====
-model BaiViet {
-  id        Int       @id @default(autoincrement()) @map("id")
-  idLoai    Int?      @map("id_loai")
-  thuTu     Int?      @map("thu_tu")
-  tieuDe    String?   @map("tieu_de")
-  hinhNho   String?   @map("hinh_nho")
-  hinhLon   String?   @map("hinh_lon")
-  tomTat    String?   @map("tom_tat")
-  noiDung   String?   @map("noi_dung")
-  hienThi   Int?      @default(1) @map("hien_thi")
-  hieuLuc   Int?      @default(1) @map("hieu_luc")
-  tinNoiBat Int?      @default(0) @map("tin_noi_bat")
-  soLanXem  Int?      @default(0) @map("so_lan_xem")
-  ngay      DateTime? @default(now()) @map("ngay")
-  tuKhoa1   String?   @map("tu_khoa_1")
-  tuKhoa2   String?   @map("tu_khoa_2")
-  tags      String?   @map("tags")
-  link      String?   @map("link")
-  timKiem   String?   @map("tim_kiem")
-  tacGia    String?   @map("tac_gia")
-  urlVideo  String?   @map("url_video")
+// ============================================================================
+// TIN TỨC
+// ============================================================================
 
-  loai      BaiVietLoai? @relation(fields: [idLoai], references: [id])
+model NewsCategory {
+  id        Int    @id @default(autoincrement())
+  parentId  Int?   @map("parent_id")
+  name      String
+  slug      String @unique
+  sortOrder Int    @default(0) @map("sort_order")
 
-  @@map("bai_viet")
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  /// Giữ lại theo yêu cầu (nhập mô tả danh mục qua RichTextEditor),
+  /// hiện chưa hiển thị trên trang public — cần bổ sung UI sau.
+  descriptionHtml String? @map("description_html")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent   NewsCategory?  @relation("NewsCategoryTree", fields: [parentId], references: [id])
+  children NewsCategory[] @relation("NewsCategoryTree")
+  articles NewsArticle[]
+
+  @@map("news_categories")
 }
 
-// ===== BANNER SLIDE =====
+model NewsArticle {
+  id         Int    @id @default(autoincrement())
+  categoryId Int?   @map("category_id")
+  sortOrder  Int    @default(0) @map("sort_order")
+  title      String
+  slug       String @unique
+
+  thumbnailUrl  String? @map("thumbnail_url")
+  coverImageUrl String? @map("cover_image_url")
+  excerpt       String?
+  contentHtml   String? @map("content_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  /// Field sống thật duy nhất trong nhóm "hit-counter" cũ — tăng biến khi
+  /// xem chi tiết bài viết, hiển thị "lượt xem" trên trang public.
+  viewCount   Int      @default(0) @map("view_count")
+  publishedAt DateTime @default(now()) @map("published_at")
+  author      String?
+  /// Chưa có nơi nhúng video ở public site — giữ lại, hoàn thiện hiển thị sau.
+  videoUrl    String?  @map("video_url")
+
+  category NewsCategory? @relation(fields: [categoryId], references: [id])
+
+  @@map("news_articles")
+}
+
+// ============================================================================
+// GIAO DIỆN
+// ============================================================================
+
 model BannerSlide {
-  id      Int     @id @default(autoincrement()) @map("id")
-  idLoai  Int?    @map("id_loai")
-  thuTu   Int?    @map("thu_tu")
-  tenHinh String? @map("ten_hinh")
-  url     String? @map("url")
-  link    String? @map("link")
-  tomTat  String? @map("tom_tat")
-  noiDung String? @map("noi_dung")
+  id        Int     @id @default(autoincrement())
+  sortOrder Int     @default(0) @map("sort_order")
+  imageUrl  String  @map("image_url")
+  linkUrl   String? @map("link_url")
+  caption   String?
 
-  @@map("banner_slide")
+  @@map("banner_slides")
 }
 
-// ===== LIÊN HỆ KHÁCH HÀNG (form gửi đến) =====
-model LienHeKH {
-  id        Int       @id @default(autoincrement()) @map("id")
-  idLoai    Int?      @map("id_loai")
-  tenKH     String?   @map("ten_kh")
-  diaChi    String?   @map("dia_chi")
-  dienThoai String?   @map("dien_thoai")
-  email     String?   @map("email")
-  tieuDe    String?   @map("tieu_de")
-  noiDung   String?   @map("noi_dung")
-  ngay      DateTime? @default(now()) @map("ngay")
-  status    Int?      @default(0) @map("status")
+/// Chưa có UI hiển thị ở public site — giữ nguyên trong schema theo yêu cầu
+/// để phát triển tiếp, không xoá khỏi thiết kế.
+model AdPanel {
+  id        Int     @id @default(autoincrement())
+  sortOrder Int     @default(0) @map("sort_order")
+  imageUrl  String? @map("image_url")
+  linkUrl   String? @map("link_url")
+  widthPx   Int?    @map("width_px")
+  heightPx  Int?    @map("height_px")
 
-  @@map("lien_he_kh")
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  @@map("ad_panels")
 }
 
-// ===== PANEL / QUẢNG CÁO =====
-model Panel {
-  id      Int     @id @default(autoincrement()) @map("id")
-  idLoai  Int?    @map("id_loai")
-  thuTu   Int?    @map("thu_tu")
-  tenHinh String? @map("ten_hinh")
-  link    String? @map("link")
-  url     String? @map("url")
-  rong    Int?    @map("rong")
-  cao     Int?    @map("cao")
-  hienThi Int?    @default(1) @map("hien_thi")
-  hieuLuc Int?    @default(1) @map("hieu_luc")
+// ============================================================================
+// KHÁCH HÀNG
+// ============================================================================
 
-  @@map("panel")
+model ContactSubmission {
+  id Int @id @default(autoincrement())
+
+  /// enum InquiryType: "GENERAL_CONTACT" (form Liên hệ, id_loai cũ = 1)
+  ///                 | "QUOTE_REQUEST"   (form Đặt hàng, id_loai cũ = 2)
+  inquiryType String @default("GENERAL_CONTACT") @map("inquiry_type")
+
+  fullName    String? @map("full_name")
+  address     String?
+  phoneNumber String? @map("phone_number")
+  email       String?
+  subject     String?
+  message     String?
+
+  /// enum ContactStatus: "PENDING" (status cũ = 0) | "RESOLVED" (status cũ = 1)
+  status String @default("PENDING")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("contact_submissions")
 }
 
-// ===== CẤU HÌNH WEBSITE =====
-model CauHinh {
-  id       Int     @id @default(autoincrement()) @map("id")
-  khoa     String  @unique @map("khoa")
-  giaTri   String? @map("gia_tri")
-  ghiChu   String? @map("ghi_chu")
+// ============================================================================
+// HỆ THỐNG
+// ============================================================================
 
-  @@map("cau_hinh")
+model AdminUser {
+  id           Int     @id @default(autoincrement())
+  fullName     String? @map("full_name")
+  email        String  @unique
+  /// bcrypt hash — tên rõ nghĩa hơn "mat_khau" cũ, nhấn mạnh không phải plaintext.
+  passwordHash String  @map("password_hash")
+
+  /// enum AdminRole: "ADMIN" | "EDITOR"
+  role String @default("ADMIN")
+
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
+
+model SiteSetting {
+  id          Int     @id @default(autoincrement())
+  key         String  @unique
+  value       String?
+  description String?
+
+  @@map("site_settings")
 }

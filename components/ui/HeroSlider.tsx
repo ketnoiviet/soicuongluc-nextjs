@@ -2,12 +2,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { getImageUrl } from '@/lib/utils'
 
 interface Slide {
   id: number
-  url: string
-  link?: string | null
-  tomTat?: string | null
+  imageUrl: string | null
+  linkUrl?: string | null
+  caption?: string | null
 }
 
 export default function HeroSlider({ slides }: { slides: Slide[] }) {
@@ -32,10 +33,10 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
           display: i === current ? 'block' : 'none',
           position: 'relative',
         }}>
-          <Link href={slide.link || '/'}>
+          <Link href={slide.linkUrl || '/'}>
             <Image
-              src={slide.url.replace('/uploadwb/', '/uploads/')}
-              alt={slide.tomTat || `Slide ${i + 1}`}
+              src={getImageUrl(slide.imageUrl)}
+              alt={slide.caption || `Slide ${i + 1}`}
               width={1400}
               height={500}
               style={{ width: '100%', height: 'auto', maxHeight: 500, objectFit: 'cover', display: 'block' }}
