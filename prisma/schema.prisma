@@ -93,13 +93,33 @@ model Product {
   salePrice Float?  @map("sale_price")
   unit      String?
 
+  /// SEO — mặc định lấy theo name/shortDescription nếu để trống, có thể ghi đè riêng.
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+  /// Từ khoá chính dùng để chấm điểm SEO ở trang admin (không hiển thị công khai).
+  focusKeyword    String? @map("focus_keyword")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   category   ProductCategory?   @relation(fields: [categoryId], references: [id])
   images     ProductImage[]
   dimensions ProductDimension[]
+  redirects  ProductRedirect[]
 
   @@map("products")
+}
+
+/// URL cũ của sản phẩm sau khi đổi slug — trang public tra bảng này để
+/// chuyển hướng 301/308 (permanentRedirect) sang slug hiện tại thay vì trả 404.
+model ProductRedirect {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  oldSlug   String   @unique @map("old_slug")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_redirects")
 }
 
 model ProductImage {

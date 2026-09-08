@@ -1,10 +1,12 @@
 import 'server-only'
-import { writeFile, mkdir } from 'fs/promises'
+import { writeFile, mkdir, unlink } from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
 import { slugify } from '@/lib/utils'
 
+const PUBLIC_ROOT = path.join(process.cwd(), 'public')
 const UPLOAD_ROOT = path.join(process.cwd(), 'public', 'uploads', 'admin')
+const PRODUCT_IMG_ROOT = path.join(process.cwd(), 'public', 'uploads', 'imgproducts')
 const MAX_WIDTH = 1600
 const MAX_SIZE = 8 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -87,4 +89,124 @@ export async function saveEditorImage(file: File | null, folder = 'editor'): Pro
   }
 
   return `/uploads/admin/${folder}/${fileName}`
+}
+
+// Các thành phần ngày/giờ hiện tại (đã pad 2 chữ số) dùng chung cho các hàm sinh tên file ảnh
+// sản phẩm bên dưới - mỗi hàm tự ghép theo đúng thứ tự được yêu cầu riêng, tránh lặp logic pad.
+function dateTimeParts(d = new Date()) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return {
+    ss: pad(d.getSeconds()),
+    mm: pad(d.getMinutes()),
+    HH: pad(d.getHours()),
+    dd: pad(d.getDate()),
+    MM: pad(d.getMonth() + 1),
+    yyyy: String(d.getFullYear()),
+  }
+}
+
+// dd-mm-yyyy-HHmm theo đúng tinh thần "slug + loại + ngày" nhưng có thêm giờ:phút để mỗi lần
+// re-upload trong cùng ngày ra tên file/URL mới - tránh ghi đè khiến cache trình duyệt/CDN còn
+// giữ ảnh cũ dưới URL cũ.
+function ddmmyyyyHHmm() {
+  const { dd, MM, yyyy, HH, mm } = dateTimeParts()
+  return `${dd}-${MM}-${yyyy}-${HH}${mm}`
+}
+
+/**
+ * Lưu 1 ảnh sản phẩm (upload duy nhất ở Form) thành 2 bản WebP: thumbnail (tối đa 640px)
+ * và ảnh lớn/chi tiết (tối đa 1000px), tên file theo slug sản phẩm + loại + ngày.
+ * Ghi vào public/uploads/imgproducts/ - không đụng tới các ảnh cũ ở uploads/admin hay uploadwb.
+ */
+export async function saveProductImage(
+  file: File | null,
+  slug: string
+): Promise<{ thumbnailUrl: string; coverImageUrl: string } | null> {
+  if (!file || file.size === 0) return null
+  validateImage(file)
+
+  await mkdir(PRODUCT_IMG_ROOT, { recursive: true })
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const base = slugify(slug) || 'san-pham'
+  const dateStr = ddmmyyyyHHmm()
+  const thumbName = `${base}-thumbnail-${dateStr}.webp`
+  const largeName = `${base}-large-${dateStr}.webp`
+
+  try {
+    await sharp(buffer).rotate().resize({ width: 640, withoutEnlargement: true }).webp({ quality: 85 }).toFile(path.join(PRODUCT_IMG_ROOT, thumbName))
+    await sharp(buffer).rotate().resize({ width: 1000, withoutEnlargement: true }).webp({ quality: 85 }).toFile(path.join(PRODUCT_IMG_ROOT, largeName))
+  } catch {
+    throw new Error('Không thể xử lý ảnh. Vui lòng thử ảnh khác.')
+  }
+
+  return {
+    thumbnailUrl: `/uploads/imgproducts/${thumbName}`,
+    coverImageUrl: `/uploads/imgproducts/${largeName}`,
+  }
+}
+
+// "giây-phút-giờ-ngày-tháng-năm" hiện tại - dùng cho tên ảnh Thư viện ảnh sản phẩm, đủ độ chi tiết
+// (tới giây) để nhiều ảnh chọn tải lên cùng lúc không trùng giây; số thứ tự ảnh ở cuối tên file
+// xử lý nốt trường hợp trùng giây trong cùng 1 lần chọn nhiều ảnh.
+function giayPhutGioNgayThangNam() {
+  const { ss, mm, HH, dd, MM, yyyy } = dateTimeParts()
+  return `${ss}-${mm}-${HH}-${dd}-${MM}-${yyyy}`
+}
+
+/**
+ * Lưu 1 ảnh cho "Thư viện ảnh sản phẩm": resize tối đa 1000px (giữ nguyên nếu ảnh gốc đã nhỏ hơn),
+ * luôn chuyển WebP, ghi phẳng vào public/uploads/imgproducts/ (không tạo thư mục con).
+ * Tên file: <slug>-<giây-phút-giờ-ngày-tháng-năm>-<số thứ tự ảnh>.webp
+ */
+export async function saveProductGalleryImage(file: File | null, slug: string, index: number): Promise<string | null> {
+  if (!file || file.size === 0) return null
+  validateImage(file)
+
+  await mkdir(PRODUCT_IMG_ROOT, { recursive: true })
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const base = slugify(slug) || 'san-pham'
+  const fileName = `${base}-${giayPhutGioNgayThangNam()}-${index}.webp`
+
+  try {
+    await sharp(buffer, { animated: file.type === 'image/gif' })
+      .rotate()
+      .resize({ width: 1000, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toFile(path.join(PRODUCT_IMG_ROOT, fileName))
+  } catch {
+    throw new Error('Không thể xử lý ảnh. Vui lòng thử ảnh khác.')
+  }
+
+  return `/uploads/imgproducts/${fileName}`
+}
+
+/**
+ * Xoá 1 file ảnh đã upload dựa theo URL public lưu trong DB (vd. "/uploads/imgproducts/...").
+ * Chuẩn hoá path "/uploadwb/" cũ giống getImageUrl() ở lib/utils.ts trước khi map ra đường dẫn
+ * thật trên đĩa, và chỉ xoá file nằm trong thư mục uploads/ - không đụng tới asset tĩnh khác
+ * (vd. /images/no-image.jpg) hay đi ra ngoài thư mục public/ qua path traversal.
+ * Best-effort: không throw khi file không tồn tại hoặc xoá lỗi - không được chặn thao tác xoá dữ liệu chính.
+ */
+export async function deleteUploadedFile(url: string | null | undefined): Promise<void> {
+  if (!url) return
+  const normalized = url.replace('/uploadwb/', '/uploads/')
+  if (!normalized.startsWith('/uploads/')) return
+
+  const filePath = path.join(PUBLIC_ROOT, normalized)
+  if (!filePath.startsWith(PUBLIC_ROOT)) return
+
+  try {
+    await unlink(filePath)
+  } catch {
+    // File đã không còn tồn tại hoặc không xoá được - bỏ qua.
+  }
+}
+
+/**
+ * Trích danh sách URL ảnh (<img src="...">) chèn trong nội dung rich-text (TinyMCE) - dùng để dọn
+ * file khi xoá record chứa nội dung đó (vd. xoá sản phẩm thì dọn luôn ảnh chèn trong mô tả).
+ */
+export function extractImageSrcs(html: string | null | undefined): string[] {
+  if (!html) return []
+  return Array.from(html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi), (m) => m[1])
 }

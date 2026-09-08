@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getImageUrl } from '@/lib/utils'
+import { getImageUrl, stripHtml } from '@/lib/utils'
 import type { Metadata } from 'next'
 
 interface Props { params: { slug: string } }
@@ -10,9 +10,12 @@ interface Props { params: { slug: string } }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await prisma.product.findFirst({ where: { slug: params.slug } })
   if (!product) return { title: 'Sản phẩm không tồn tại' }
+  // Ưu tiên Meta Title/Meta Description nhập ở box "Kiểm tra SEO" (admin) - fallback về tên/mô tả
+  // ngắn khi chưa điền. shortDescription giờ là HTML (TinyMCE) nên phải stripHtml trước khi
+  // đưa vào meta description, tránh lộ nguyên thẻ <p> trong kết quả tìm kiếm.
   return {
-    title: `${product.name} | HARIFA - soicuongluc.com`,
-    description: product.shortDescription || `${product.name} - Sợi cường lực chính hãng tại HARIFA`,
+    title: product.metaTitle || `${product.name} | HARIFA - soicuongluc.com`,
+    description: product.metaDescription || stripHtml(product.shortDescription || '').slice(0, 160) || `${product.name} - Sợi cường lực chính hãng tại HARIFA`,
   }
 }
 
@@ -21,7 +24,15 @@ export default async function ProductDetailPage({ params }: Props) {
     where: { slug: params.slug, status: 'PUBLISHED' },
     include: { category: true, images: { orderBy: { sortOrder: 'asc' } }, dimensions: { orderBy: { sortOrder: 'asc' } } },
   })
-  if (!product) notFound()
+  if (!product) {
+    // Đường dẫn cũ (đổi slug ở admin có bật "Tạo chuyển hướng 301") - tra bảng ProductRedirect
+    // thay vì trả 404 thẳng, để không mất traffic/SEO đã có của URL cũ.
+    const oldSlugRedirect = await prisma.productRedirect.findUnique({ where: { oldSlug: params.slug }, include: { product: true } })
+    if (oldSlugRedirect?.product && oldSlugRedirect.product.status === 'PUBLISHED') {
+      permanentRedirect(`/san-pham/chi-tiet/${oldSlugRedirect.product.slug}`)
+    }
+    notFound()
+  }
 
   // Sản phẩm liên quan cùng danh mục
   const related = await prisma.product.findMany({
