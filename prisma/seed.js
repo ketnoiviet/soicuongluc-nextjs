@@ -4,8 +4,24 @@
 // nhập qua admin sau khi có tài khoản. Nếu cần dữ liệu demo để test nhanh khi phát triển, seed
 // thêm thủ công bằng script riêng, đừng sửa lại file này (giữ nó sạch cho mọi dự án dùng chung).
 const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
+
+// Mật khẩu mặc định của tài khoản admin nếu không đặt ADMIN_PASSWORD_HASH - hash sẵn của
+// "Admin@123" (chuỗi này vốn đã public trong .env.example từ trước nên không phải bí mật;
+// bắt buộc đổi ngay sau lần đăng nhập đầu). Chỉ dùng làm fallback tiện dev nhanh, KHÔNG dùng
+// khi deploy thật.
+const DEFAULT_ADMIN_PASSWORD_HASH = '$2a$10$IgRNPi7Ienk4jnmxRT/5s.qd951GEp7H/qFo/UQA2lokvpiCs2a2S'
+
+// bcrypt/argon2 hash luôn ở dạng $2a$/$2b$/$2y$... (bcrypt) - chặn sớm nếu ai đó lỡ dán
+// mật khẩu dạng chữ thường (plaintext) vào biến *_HASH thay vì hash thật.
+function assertBcryptHash(value, envName) {
+  if (!/^\$2[aby]\$\d{2}\$/.test(value)) {
+    throw new Error(
+      `${envName} không phải là bcrypt hash hợp lệ. Đừng đặt mật khẩu thô vào đây - ` +
+      `hãy chạy "node scripts/hash-password.js \\"MatKhauCuaBan\\"" rồi dán chuỗi hash in ra vào .env.`
+    )
+  }
+}
 
 async function main() {
   console.log('🌱 Seeding database...')
@@ -38,41 +54,46 @@ async function main() {
   }
 
   // ===== TÀI KHOẢN ADMIN MẶC ĐỊNH (dành cho khách hàng - chủ website) =====
+  // .env chỉ chứa BCRYPT HASH (ADMIN_PASSWORD_HASH), không bao giờ chứa mật khẩu thô - nếu
+  // hosting/source bị lộ, kẻ tấn công chỉ có hash (phải bruteforce offline), không có mật khẩu
+  // dùng đăng nhập ngay được. Tạo hash bằng: node scripts/hash-password.js "MatKhauCuaBan"
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com'
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
+  const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH
+  if (process.env.ADMIN_PASSWORD_HASH) assertBcryptHash(adminPasswordHash, 'ADMIN_PASSWORD_HASH')
   const existAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } })
   if (!existAdmin) {
-    const hash = await bcrypt.hash(adminPassword, 10)
     await prisma.adminUser.create({
-      data: { fullName: 'Quản trị viên', email: adminEmail, passwordHash: hash, role: 'ADMIN', isActive: true },
+      data: { fullName: 'Quản trị viên', email: adminEmail, passwordHash: adminPasswordHash, role: 'ADMIN', isActive: true },
     })
   }
 
   // ===== TÀI KHOẢN SUPERADMIN (ẩn, dành cho nhà phát triển) =====
   // Toàn quyền, không hiển thị/không quản lý được từ tài khoản ADMIN trở xuống (xem
-  // lib/permissions.ts - canManageRole). Không đặt fallback mật khẩu cứng trong code
-  // như khối ADMIN ở trên - đây là tài khoản nhạy cảm, bắt buộc phải khai báo qua .env
-  // (không commit) để mật khẩu thật không bao giờ nằm trong lịch sử git. Bỏ qua nếu
-  // thiếu biến môi trường hoặc nếu email đã tồn tại (không ghi đè mật khẩu khi seed lại).
+  // lib/permissions.ts - canManageRole). Không đặt fallback hash cứng như khối ADMIN ở trên -
+  // đây là tài khoản nhạy cảm, bắt buộc phải khai báo SUPERADMIN_PASSWORD_HASH qua .env (không
+  // commit). Bỏ qua nếu thiếu biến môi trường hoặc nếu email đã tồn tại (không ghi đè mật khẩu
+  // khi seed lại).
   const superadminEmail = process.env.SUPERADMIN_EMAIL
-  const superadminPassword = process.env.SUPERADMIN_PASSWORD
-  if (superadminEmail && superadminPassword) {
+  const superadminPasswordHash = process.env.SUPERADMIN_PASSWORD_HASH
+  if (superadminEmail && superadminPasswordHash) {
+    assertBcryptHash(superadminPasswordHash, 'SUPERADMIN_PASSWORD_HASH')
     const existSuperadmin = await prisma.adminUser.findUnique({ where: { email: superadminEmail } })
     if (!existSuperadmin) {
-      const hash = await bcrypt.hash(superadminPassword, 10)
       await prisma.adminUser.create({
-        data: { fullName: 'Superadmin', email: superadminEmail, passwordHash: hash, role: 'SUPERADMIN', isActive: true },
+        data: { fullName: 'Superadmin', email: superadminEmail, passwordHash: superadminPasswordHash, role: 'SUPERADMIN', isActive: true },
       })
     }
   }
 
   console.log('✅ Seed hoàn tất!')
   console.log(`   - Cấu hình website: ${siteSettings.length} khoá (rỗng, vào /admin/cau-hinh điền)`)
-  console.log(`   - Tài khoản admin: ${adminEmail} / mật khẩu: ${existAdmin ? '(đã tồn tại, giữ nguyên)' : adminPassword}`)
   console.log(
-    superadminEmail && superadminPassword
-      ? `   - Tài khoản superadmin (ẩn): ${superadminEmail} (mật khẩu lấy từ .env, không in ra đây)`
-      : '   - Tài khoản superadmin: bỏ qua (thiếu SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD trong .env)'
+    `   - Tài khoản admin: ${adminEmail} ${existAdmin ? '(đã tồn tại, giữ nguyên)' : process.env.ADMIN_PASSWORD_HASH ? '(mật khẩu lấy từ ADMIN_PASSWORD_HASH, không in ra đây)' : '/ mật khẩu mặc định: Admin@123'}`
+  )
+  console.log(
+    superadminEmail && superadminPasswordHash
+      ? `   - Tài khoản superadmin (ẩn): ${superadminEmail} (mật khẩu lấy từ SUPERADMIN_PASSWORD_HASH, không in ra đây)`
+      : '   - Tài khoản superadmin: bỏ qua (thiếu SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD_HASH trong .env)'
   )
   console.log('   ⚠️  Hãy đổi mật khẩu ngay sau khi đăng nhập lần đầu!')
   console.log('   ℹ️  Không có dữ liệu mẫu (banner/danh mục/sản phẩm/bài viết) - tự nhập qua admin.')

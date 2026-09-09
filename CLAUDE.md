@@ -45,7 +45,9 @@ npm run db:studio    # Prisma Studio GUI at http://localhost:5555
 
 There is no test suite in this repo. `npm run build` is the closest thing to a correctness check — it runs both the TypeScript compiler and ESLint, and Next.js will hard-fail the build on any duplicate/conflicting route.
 
-Local setup: copy `.env.example` to `.env` (SQLite path, SMTP creds for the contact form, `JWT_SECRET`, `ADMIN_EMAIL`/`ADMIN_PASSWORD` used only by `db:seed` to bootstrap the first admin account), then `npx prisma db push && npx prisma db seed`.
+Local setup: copy `.env.example` to `.env` (SQLite path, SMTP creds for the contact form, `JWT_SECRET`, `ADMIN_EMAIL`/`ADMIN_PASSWORD_HASH` used only by `db:seed` to bootstrap the first admin account), then `npx prisma db push && npx prisma db seed`.
+
+`db:seed` never accepts a plaintext password — `ADMIN_PASSWORD_HASH`/`SUPERADMIN_PASSWORD_HASH` in `.env` must already be bcrypt hashes (generate with `node scripts/hash-password.js "YourPassword"`); `prisma/seed.js` rejects anything that doesn't look like a bcrypt hash (`assertBcryptHash`). This is deliberate: `.env` is gitignored but still readable by anyone with filesystem/source access (e.g. a compromised host), so it must never contain a password usable to log in directly — only a hash that'd need offline brute-forcing. Leaving `ADMIN_PASSWORD_HASH` blank falls back to a baked-in hash of `Admin@123` (a known default, not a secret — change it immediately after first login); `SUPERADMIN_PASSWORD_HASH` has no such fallback and superadmin creation is skipped if unset.
 
 ## Admin UI & Dashboard Standards
 
