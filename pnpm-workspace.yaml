@@ -1,0 +1,15 @@
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+  unrs-resolver: true
+
+# uuid@8.3.2 (kéo theo qua exceljs) có lỗ hổng bảo mật đã biết - ghim lên bản vá mà không cần
+# hạ cấp exceljs. @types/react và @types/react-dom ghim đúng bản khớp React 19.2.8 (tránh vài
+# thư viện UI kéo theo @types/react bản khác gây xung đột type). Field "overrides" ở
+# package.json (kiểu npm) KHÔNG được pnpm đọc - phải khai báo ở đây.
+overrides:
+  uuid: ^11.1.1
+  '@types/react': 19.2.18
+  '@types/react-dom': 19.2.7

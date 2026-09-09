@@ -11,7 +11,7 @@ Website for HARIFA (soicuongluc.com), a Vietnamese distributor of industrial rei
 Dự án ứng dụng Next.js App Router, Server Actions, TypeScript và Tailwind CSS.
 
 ## 1. Commands & Workflows
-- **Package Manager**: Ưu tiên sử dụng `pnpm` (hoặc `npm` nếu môi trường yêu cầu)
+- **Package Manager**: `pnpm` — bắt buộc, không dùng `npm install`/`npm ci` nữa (xem lý do ở phần Commands bên dưới). `packageManager` trong package.json ghim đúng version.
 
 ## 2. Server Actions Standards (`app/actions/*`)
 
@@ -30,22 +30,31 @@ Tất cả các Server Actions xử lý dữ liệu backend phải tuân theo c�
 ## Commands
 
 ```bash
-npm run dev          # Start dev server (http://localhost:3000)
-npm run build        # Production build (runs typecheck + lint via next build)
-npm start             # Run production build
-npm run lint          # ESLint only
+pnpm dev          # Start dev server (http://localhost:3000)
+pnpm build        # Production build (runs typecheck + lint via next build)
+pnpm start        # Run production build
+pnpm lint         # ESLint only
 
-npm run db:generate  # Regenerate Prisma client after schema changes
-npm run db:push      # Push schema.prisma changes to dev.db without a migration
-npm run db:migrate   # Create/apply a Prisma migration (prisma migrate dev)
-npm run db:seed      # Seed sample data + default admin (prisma/seed.js)
-npm run db:reset     # DROPS the db, re-migrates, and re-seeds — destroys local data
-npm run db:studio    # Prisma Studio GUI at http://localhost:5555
+pnpm db:generate  # Regenerate Prisma client after schema changes
+pnpm db:push      # Push schema.prisma changes to dev.db without a migration
+pnpm db:migrate   # Create/apply a Prisma migration (prisma migrate dev)
+pnpm db:seed      # Seed sample data + default admin (prisma/seed.js)
+pnpm db:reset     # DROPS the db, re-migrates, and re-seeds — destroys local data
+pnpm db:studio    # Prisma Studio GUI at http://localhost:5555
 ```
 
-There is no test suite in this repo. `npm run build` is the closest thing to a correctness check — it runs both the TypeScript compiler and ESLint, and Next.js will hard-fail the build on any duplicate/conflicting route.
+There is no test suite in this repo. `pnpm build` is the closest thing to a correctness check — it runs both the TypeScript compiler and ESLint, and Next.js will hard-fail the build on any duplicate/conflicting route.
 
-Local setup: copy `.env.example` to `.env` (SQLite path, SMTP creds for the contact form, `JWT_SECRET`, `ADMIN_EMAIL`/`ADMIN_PASSWORD_HASH` used only by `db:seed` to bootstrap the first admin account), then `npx prisma db push && npx prisma db seed`.
+Local setup: copy `.env.example` to `.env` (SQLite path, SMTP creds for the contact form, `JWT_SECRET`, `ADMIN_EMAIL`/`ADMIN_PASSWORD_HASH` used only by `db:seed` to bootstrap the first admin account), then `pnpm exec prisma db push && pnpm exec prisma db seed`.
+
+### Package manager: pnpm, not npm
+
+This project uses **pnpm exclusively** (`package-lock.json` is gone, `pnpm-lock.yaml` is the committed lockfile). Reason: when the same codebase is cloned into many separate client projects on one machine, npm gives every clone its own fully-duplicated `node_modules` (~870MB each here), while pnpm keeps one global content-addressable store (`pnpm config get store-dir`) and hard-links identical package versions into each project — clones share disk space for whatever they have in common and stay fully independent for whatever they don't (e.g. a cart-specific clone adding a payment SDK doesn't affect the others). Don't run `npm install`/`npm ci` in this repo — it'll recreate `package-lock.json` and a flat `node_modules` that drifts from `pnpm-lock.yaml`.
+
+- **Settings live in `pnpm-workspace.yaml`, not `package.json`** — pnpm 10+ stopped reading a `pnpm` key in `package.json` (it warns and silently ignores it). `onlyBuiltDependencies`-style config is `allowBuilds: { <pkg>: true }` in `pnpm-workspace.yaml` (pnpm rewrites this file itself when you run `pnpm approve-builds`). Dependency version pinning also does **not** use npm's top-level `overrides` field in `package.json` (pnpm ignores that too) — it's `overrides:` in `pnpm-workspace.yaml` instead. Current overrides there: `uuid` (patches a CVE pulled in transitively by `exceljs`, without downgrading `exceljs` itself) and exact `@types/react`/`@types/react-dom` pins (keeps every transitive `@types/react` consumer, e.g. Radix UI packages, on the same version as the real `react` in use).
+- **Build/install scripts are sandboxed by default** — native deps with their own `postinstall`/`preinstall` (`@prisma/client`, `@prisma/engines`, `prisma`, `esbuild`, `sharp`, `unrs-resolver`) won't run their scripts on a fresh `pnpm install` unless approved. This repo pre-approves them via `allowBuilds` in `pnpm-workspace.yaml`, so a normal `pnpm install` should just work; if a *new* dependency adds its own native postinstall later and you see `ERR_PNPM_IGNORED_BUILDS`, run `pnpm approve-builds --all` (non-interactive) once.
+- **`node_modules/<pkg>` is a symlink for direct dependencies**, not a real directory (the real files live under `node_modules/.pnpm/<pkg>@<version>/node_modules/<pkg>`). Any script that copies out of `node_modules` by path (like [scripts/copy-tinymce.js](scripts/copy-tinymce.js), which copies TinyMCE's assets into `public/tinymce/` for the self-hosted editor) must pass `dereference: true` to `fs.cpSync` — otherwise it tries to recreate the symlink at the destination, which fails on Windows without admin/Developer Mode (`EPERM: operation not permitted, symlink`).
+- **If `pnpm install`/`prisma generate` ever leaves `@prisma/client` types empty** (every model import errors with "has no exported member", `PrismaClient` typed as `any`) — this happened once during the initial npm→pnpm migration, cause unconfirmed (possibly a timing issue on the very first native-build pass) — delete the generated output and regenerate: `rm -rf node_modules/.pnpm/@prisma+client@*/node_modules/.prisma && pnpm exec prisma generate`.
 
 `db:seed` never accepts a plaintext password — `ADMIN_PASSWORD_HASH`/`SUPERADMIN_PASSWORD_HASH` in `.env` must already be bcrypt hashes (generate with `node scripts/hash-password.js "YourPassword"`); `prisma/seed.js` rejects anything that doesn't look like a bcrypt hash (`assertBcryptHash`). This is deliberate: `.env` is gitignored but still readable by anyone with filesystem/source access (e.g. a compromised host), so it must never contain a password usable to log in directly — only a hash that'd need offline brute-forcing. Leaving `ADMIN_PASSWORD_HASH` blank falls back to a baked-in hash of `Admin@123` (a known default, not a secret — change it immediately after first login); `SUPERADMIN_PASSWORD_HASH` has no such fallback and superadmin creation is skipped if unset.
 
@@ -111,7 +120,7 @@ Always read image fields through [lib/utils.ts](lib/utils.ts)'s `getImageUrl()` 
 
 Long free-text fields that hold HTML (`shortDescription`, `descriptionHtml`, `specificationsHtml`, `applicationsHtml` on `Product`; `descriptionHtml` on `ProductCategory`/`NewsCategory`; `contentHtml` on `NewsArticle`) use [app/admin/_components/RichTextEditor.tsx](app/admin/_components/RichTextEditor.tsx) instead of a plain `<textarea>` — a client component wrapping `@tinymce/tinymce-react`, self-hosted (not the Tiny Cloud CDN) via `tinymceScriptSrc="/tinymce/tinymce.min.js"` and `licenseKey="gpl"` (free GPL usage, no API key, no "domain not registered" banner). It renders a hidden `<input name={name}>` alongside the editor so its HTML content still submits through the existing `ActionForm`/server-action flow untouched — pass it `name` + `defaultValue` exactly like a textarea.
 
-- **Assets**: `public/tinymce/` is *generated*, not committed (gitignored) — `npm install` runs `scripts/copy-tinymce.js` via `postinstall`, which copies `node_modules/tinymce` there. If the editor 404s on `/tinymce/tinymce.min.js` after a fresh clone or dependency bump, run `node scripts/copy-tinymce.js` manually.
+- **Assets**: `public/tinymce/` is *generated*, not committed (gitignored) — `pnpm install` runs `scripts/copy-tinymce.js` via `postinstall`, which copies `node_modules/tinymce` there (`dereference: true` because that path is a pnpm symlink, not a real directory — see the pnpm section above). If the editor 404s on `/tinymce/tinymce.min.js` after a fresh clone or dependency bump, run `node scripts/copy-tinymce.js` manually.
 - **Image uploads inside the editor** go through `images_upload_handler` → `POST /api/admin/upload-image` ([app/api/admin/upload-image/route.ts](app/api/admin/upload-image/route.ts)), which checks `getSession()` itself (middleware's `/admin/:path*` matcher does **not** cover `/api/*`, so this route is the only auth gate — don't drop it) and delegates to `saveEditorImage()` for the actual WebP conversion/validation/save.
 - `paste_data_images: true` lets copy/paste and print-screen-paste insert images directly (not just the toolbar's Insert Image dialog) — `automatic_uploads` + `images_upload_handler` still force every pasted image through the same server-side upload/WebP/validation pipeline above (TinyMCE swaps the pasted `blob:` URL for the real server URL once the upload resolves), it's never saved as inline base64. Because that swap is async, [lib/uploadTracker.ts](lib/uploadTracker.ts) tracks in-flight editor uploads globally and `SubmitButton` disables itself (showing "Đang tải ảnh...") until they finish — keep this wired up on any new field using `RichTextEditor`, otherwise a fast submit right after a paste can save a `blob:` URL that's invalid outside that browser session.
 - `RichTextEditor` also takes an optional `maxLength` prop (plain-text character count, HTML tags excluded) that renders a live counter and truncates on overflow — used for fields with a hard length limit (e.g. `shortDescription` on `Product`, capped at 1000). Pair it with the same limit enforced server-side in the action (`stripHtml(value).length > N`), since the client-side truncation is a UX aid, not a security boundary.

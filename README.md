@@ -59,8 +59,8 @@ Tải và cài **Node.js 18+** tại https://nodejs.org
 # Giải nén source vào thư mục
 cd soicuongluc-nextjs
 
-# Cài dependencies
-npm install
+# Cài dependencies (dự án dùng pnpm - xem CLAUDE.md phần "Package manager: pnpm, not npm")
+pnpm install
 ```
 
 ### Bước 3: Cấu hình môi trường
@@ -96,15 +96,15 @@ cp -r /path/to/old-site/uploadwb/* public/uploads/
 ### Bước 5: Tạo database và nhập dữ liệu
 ```bash
 # Tạo database SQLite và generate Prisma client
-npx prisma db push
+pnpm exec prisma db push
 
 # Nhập dữ liệu mẫu (sản phẩm, tin tức, banner...)
-npx prisma db seed
+pnpm exec prisma db seed
 ```
 
 ### Bước 6: Chạy thử
 ```bash
-npm run dev
+pnpm dev
 ```
 Mở trình duyệt: http://localhost:3000
 
@@ -114,15 +114,19 @@ Mở trình duyệt: http://localhost:3000
 
 ### Option A: VPS / Server Linux (khuyên dùng)
 ```bash
+# Trên server: cài dependencies NGAY TRÊN server đó (đừng upload node_modules build
+# sẵn từ máy Windows - sharp có binary biên dịch riêng theo hệ điều hành, sẽ lỗi trên Linux)
+pnpm install
+
 # Build production
-npm run build
+pnpm build
 
 # Chạy production
-npm start
+pnpm start
 
 # Hoặc dùng PM2 để chạy ngầm
-npm install -g pm2
-pm2 start npm --name "soicuongluc" -- start
+pnpm add -g pm2
+pm2 start pnpm --name "soicuongluc" -- start
 pm2 save
 pm2 startup
 ```
@@ -156,16 +160,18 @@ server {
 > Nếu dùng Vercel, cần chuyển sang Turso (SQLite cloud) hoặc PlanetScale.
 
 ```bash
-npm install -g vercel
+pnpm add -g vercel
 vercel --prod
 ```
 
 ### Option C: Shared Hosting (có Node.js support)
 Một số hosting hỗ trợ Node.js như Hostinger, Namecheap...
 ```bash
-npm run build
-# Upload toàn bộ thư mục (bao gồm .next, node_modules, prisma)
-# Chạy: node_modules/.bin/next start
+# Upload source code (KHÔNG upload node_modules build từ máy local) + pnpm-lock.yaml
+# Trên hosting: cài đặt và build ngay tại đó để node_modules khớp đúng hệ điều hành/kiến trúc server
+pnpm install
+pnpm build
+pnpm start
 ```
 
 ---
@@ -174,7 +180,7 @@ npm run build
 
 ### Xem dữ liệu trực quan (Prisma Studio)
 ```bash
-npx prisma studio
+pnpm exec prisma studio
 # Mở http://localhost:5555
 ```
 
@@ -189,7 +195,7 @@ cp prisma/dev.db backup/dev_$(date +%Y%m%d).db
 
 ### Reset database
 ```bash
-npm run db:reset
+pnpm db:reset
 ```
 
 ---
@@ -220,13 +226,13 @@ Redirect được cấu hình sẵn trong `next.config.js`
 ## 🛠 Scripts hữu ích
 
 ```bash
-npm run dev          # Chạy development
-npm run build        # Build production
-npm start            # Chạy production
-npm run db:push      # Sync schema → database
-npm run db:seed      # Nhập dữ liệu mẫu
-npm run db:reset     # Reset + seed lại
-npm run db:studio    # Mở Prisma Studio
+pnpm dev          # Chạy development
+pnpm build        # Build production
+pnpm start        # Chạy production
+pnpm db:push      # Sync schema → database
+pnpm db:seed      # Nhập dữ liệu mẫu
+pnpm db:reset     # Reset + seed lại
+pnpm db:studio    # Mở Prisma Studio
 ```
 
 ---

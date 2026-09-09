@@ -12,5 +12,8 @@ if (!fs.existsSync(src)) {
 }
 
 fs.rmSync(dest, { recursive: true, force: true })
-fs.cpSync(src, dest, { recursive: true })
+// dereference: true - node_modules/tinymce có thể là symlink (pnpm trỏ vào .pnpm store), cần
+// copy nội dung file thật thay vì tạo lại symlink ở public/tinymce (tạo symlink trên Windows
+// cần quyền admin/Developer Mode, không cần thiết ở đây).
+fs.cpSync(src, dest, { recursive: true, dereference: true })
 console.log('Copied tinymce assets to public/tinymce')
