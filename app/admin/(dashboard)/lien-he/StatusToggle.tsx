@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
+import { cn } from '@/lib/utils'
 import type { ContactStatus } from '@/lib/enums'
 
 export default function StatusToggle({
@@ -18,11 +19,12 @@ export default function StatusToggle({
       type="button"
       disabled={isPending}
       onClick={() => startTransition(() => onToggle(isDone ? 'PENDING' : 'RESOLVED'))}
-      className={`text-xs px-2.5 py-1.5 rounded-md border transition-colors disabled:opacity-50 ${
+      className={cn(
+        'rounded-admin-sm border px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50',
         isDone
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-          : 'border-accent/30 bg-accent/10 text-accent hover:bg-accent/20'
-      }`}
+          ? 'border-admin-emerald/25 bg-admin-emerald/10 text-admin-emerald hover:bg-admin-emerald/20'
+          : 'border-admin-amber/25 bg-admin-amber/10 text-admin-amber hover:bg-admin-amber/20'
+      )}
     >
       {isPending ? '...' : isDone ? '✓ Đã xử lý' : '● Chưa xử lý'}
     </button>

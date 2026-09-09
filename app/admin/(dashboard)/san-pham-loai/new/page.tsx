@@ -8,10 +8,8 @@ export default async function NewSanPhamLoaiPage() {
 
   return (
     <div>
-      <PageHeader title="Thêm danh mục sản phẩm" />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <SanPhamLoaiForm parents={parents} action={createSanPhamLoaiAction} />
-      </div>
+      <PageHeader title="Thêm danh mục sản phẩm" backHref="/admin/san-pham-loai" />
+      <SanPhamLoaiForm parents={parents} action={createSanPhamLoaiAction} />
     </div>
   )
 }

@@ -13,10 +13,8 @@ export default async function EditBannerSlidePage({ params }: { params: { id: st
 
   return (
     <div>
-      <PageHeader title={`Sửa banner #${item.id}`} />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <BannerSlideForm item={item} action={action} />
-      </div>
+      <PageHeader title={`Sửa banner #${item.id}`} backHref="/admin/banner-slide" />
+      <BannerSlideForm item={item} action={action} />
     </div>
   )
 }

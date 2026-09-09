@@ -3,25 +3,37 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getSession, hashPassword } from '@/lib/auth'
+import { requireAdminForPath, hashPassword } from '@/lib/auth'
+import { canManageRole } from '@/lib/permissions'
+import { navItemsFlat } from '@/app/admin/_components/nav-data'
+import { MIN_PASSWORD_LENGTH } from '@/lib/constants'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 import type { AdminRole } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/nguoi-dung')
+}
+
+// Áp cùng 1 luật rank(target) <= rank(viewer) cho mọi thao tác quản lý user khác -
+// đây là chỗ duy nhất chặn admin thường đụng vào tài khoản superadmin.
+async function requireManageableTarget(viewerRole: AdminRole, targetId: number) {
+  const target = await prisma.adminUser.findUnique({ where: { id: targetId } })
+  if (!target || !canManageRole(viewerRole, target.role as AdminRole)) {
+    throw new Error('Không tìm thấy tài khoản hoặc bạn không có quyền thao tác với tài khoản này.')
+  }
+  return target
 }
 
 export async function createNguoiDungAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin()
+  const viewer = await requireAdmin()
   const fullName = String(formData.get('fullName') || '').trim() || null
   const email = String(formData.get('email') || '').trim().toLowerCase()
   const password = String(formData.get('password') || '')
-  const role = String(formData.get('role') || 'ADMIN') as AdminRole
+  const role = String(formData.get('role') || 'EDITOR') as AdminRole
 
   if (!email) return { error: 'Email là bắt buộc.' }
-  if (password.length < 6) return { error: 'Mật khẩu phải có ít nhất 6 ký tự.' }
+  if (password.length < MIN_PASSWORD_LENGTH) return { error: `Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.` }
+  if (!canManageRole(viewer.role as AdminRole, role)) return { error: 'Bạn không có quyền tạo tài khoản với vai trò này.' }
 
   const passwordHash = await hashPassword(password)
   try {
@@ -35,53 +47,86 @@ export async function createNguoiDungAction(_prevState: ActionState, formData: F
 }
 
 export async function toggleNguoiDungActiveAction(id: number, isActive: boolean) {
-  const session = await requireAdmin()
-  if (session.userId === id && !isActive) {
+  const viewer = await requireAdmin()
+  if (viewer.id === id && !isActive) {
     throw new Error('Bạn không thể tự khóa tài khoản của chính mình.')
   }
+  await requireManageableTarget(viewer.role as AdminRole, id)
   await prisma.adminUser.update({ where: { id }, data: { isActive } })
   revalidatePath('/admin/nguoi-dung')
 }
 
 export async function deleteNguoiDungAction(id: number) {
-  const session = await requireAdmin()
-  if (session.userId === id) {
+  const viewer = await requireAdmin()
+  if (viewer.id === id) {
     throw new Error('Bạn không thể tự xóa tài khoản của chính mình.')
   }
+  await requireManageableTarget(viewer.role as AdminRole, id)
   await prisma.adminUser.delete({ where: { id } })
   revalidatePath('/admin/nguoi-dung')
 }
 
-export async function resetNguoiDungPasswordAction(id: number, _prevState: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin()
-  const password = String(formData.get('password') || '')
-  if (password.length < 6) return { error: 'Mật khẩu phải có ít nhất 6 ký tự.' }
+// Trang "Sửa tài khoản": đổi mật khẩu (bỏ trống nếu không đổi), vai trò, và danh sách
+// trang quản trị được phép truy cập - gộp 1 action theo đúng thiết kế của trang.
+export async function updateNguoiDungAction(id: number, _prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const viewer = await requireAdmin()
+  if (viewer.id === id) {
+    return { error: 'Không thể tự chỉnh sửa quyền của chính mình ở đây - dùng trang Đổi mật khẩu.' }
+  }
+  let target: Awaited<ReturnType<typeof requireManageableTarget>>
+  try {
+    target = await requireManageableTarget(viewer.role as AdminRole, id)
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Có lỗi xảy ra.' }
+  }
 
-  const passwordHash = await hashPassword(password)
-  await prisma.adminUser.update({ where: { id }, data: { passwordHash } })
+  const role = String(formData.get('role') || target.role) as AdminRole
+  if (!canManageRole(viewer.role as AdminRole, role)) {
+    return { error: 'Bạn không có quyền gán vai trò này.' }
+  }
+
+  const password = String(formData.get('password') || '')
+  if (password && password.length < MIN_PASSWORD_LENGTH) {
+    return { error: `Mật khẩu mới phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.` }
+  }
+
+  const fullAccess = formData.get('fullAccess') === 'on'
+  const validHrefs = new Set(navItemsFlat.map((i) => i.href))
+  const selectedHrefs: string[] = []
+  formData.forEach((value, key) => {
+    if (key.startsWith('perm_') && value === 'on') {
+      const href = key.slice('perm_'.length)
+      if (validHrefs.has(href)) selectedHrefs.push(href)
+    }
+  })
+
+  const data: { role: AdminRole; permissions: string | null; passwordHash?: string } = {
+    role,
+    permissions: fullAccess ? null : JSON.stringify(selectedHrefs),
+  }
+  if (password) data.passwordHash = await hashPassword(password)
+
+  await prisma.adminUser.update({ where: { id }, data })
 
   revalidatePath('/admin/nguoi-dung')
   redirect('/admin/nguoi-dung')
 }
 
 export async function changeOwnPasswordAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const session = await requireAdmin()
+  const viewer = await requireAdmin()
   const bcrypt = (await import('bcryptjs')).default
   const current = String(formData.get('currentPassword') || '')
   const next = String(formData.get('newPassword') || '')
   const confirm = String(formData.get('confirmPassword') || '')
 
-  if (next.length < 6) return { error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' }
+  if (next.length < MIN_PASSWORD_LENGTH) return { error: `Mật khẩu mới phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.` }
   if (next !== confirm) return { error: 'Xác nhận mật khẩu không khớp.' }
 
-  const user = await prisma.adminUser.findUnique({ where: { id: session.userId } })
-  if (!user) return { error: 'Không tìm thấy tài khoản.' }
-
-  const ok = await bcrypt.compare(current, user.passwordHash)
+  const ok = await bcrypt.compare(current, viewer.passwordHash)
   if (!ok) return { error: 'Mật khẩu hiện tại không đúng.' }
 
   const passwordHash = await hashPassword(next)
-  await prisma.adminUser.update({ where: { id: user.id }, data: { passwordHash } })
+  await prisma.adminUser.update({ where: { id: viewer.id }, data: { passwordHash } })
 
   return { success: 'Đổi mật khẩu thành công!' }
 }

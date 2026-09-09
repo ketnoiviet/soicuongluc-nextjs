@@ -10,7 +10,13 @@ const sanPhamMenu = [
   { href: '/san-pham/lop-xe-vat-lieu-gia-co-cong-nghiep-pu', label: 'Lốp xe & vật liệu gia cố PU' },
 ]
 
-export default function Header() {
+export default function Header({
+  introArticles = [],
+  logoUrl,
+}: {
+  introArticles?: { title: string; slug: string }[]
+  logoUrl?: string | null
+}) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [spOpen, setSpOpen] = useState(false)
 
@@ -37,7 +43,7 @@ export default function Header() {
             {/* Logo */}
             <Link href="/" className="logo">
               <Image
-                src="/uploads/hinhanh/Untitled_1.png"
+                src={logoUrl || '/uploads/hinhanh/Untitled_1.png'}
                 alt="HARIFA - Sợi cường lực"
                 width={200}
                 height={56}
@@ -52,7 +58,23 @@ export default function Header() {
                 <Link href="/" className="nav-link">Trang chủ</Link>
               </div>
               <div className="nav-item">
-                <Link href="/gioi-thieu" className="nav-link">Giới thiệu</Link>
+                <Link href="/gioi-thieu" className="nav-link">
+                  Giới thiệu{introArticles.length > 0 ? ' ▾' : ''}
+                </Link>
+                {introArticles.length > 0 && (
+                  <div className="dropdown">
+                    {introArticles.map((item) => (
+                      <Link
+                        key={item.slug}
+                        href={`/gioi-thieu/${item.slug}`}
+                        className="dropdown-link"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {item.title}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="nav-item">
                 <span className="nav-link" style={{ cursor: 'pointer' }}
@@ -67,12 +89,6 @@ export default function Header() {
                     </Link>
                   ))}
                 </div>
-              </div>
-              <div className="nav-item">
-                <Link href="/gioi-thieu#dac-tinh" className="nav-link">Đặc tính</Link>
-              </div>
-              <div className="nav-item">
-                <Link href="/gioi-thieu#ung-dung" className="nav-link">Ứng dụng</Link>
               </div>
               <div className="nav-item">
                 <Link href="/tin-tuc" className="nav-link">Tin tức</Link>

@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { Pencil } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import PageHeader from '@/app/admin/_components/PageHeader'
+import GlassCard from '@/app/admin/_components/GlassCard'
 import ConfirmDeleteButton from '@/app/admin/_components/ConfirmDeleteButton'
 import { deleteCauHinhAction } from './actions'
 
@@ -18,50 +20,52 @@ export default async function CauHinhListPage() {
         actionLabel="Thêm cấu hình"
       />
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
-              <th className="px-4 py-3 font-medium">Khóa (key)</th>
-              <th className="px-4 py-3 font-medium">Giá trị</th>
-              <th className="px-4 py-3 font-medium">Ghi chú</th>
-              <th className="px-4 py-3 font-medium text-right">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5">
-                  <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{item.key}</code>
-                </td>
-                <td className="px-4 py-2.5 text-slate-700 max-w-md truncate">{item.value || '—'}</td>
-                <td className="px-4 py-2.5 text-slate-400">{item.description || '—'}</td>
-                <td className="px-4 py-2.5">
-                  <div className="flex justify-end gap-2">
-                    <Link
-                      href={`/admin/cau-hinh/${item.id}`}
-                      className="text-xs px-2.5 py-1.5 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
-                    >
-                      Sửa
-                    </Link>
-                    <ConfirmDeleteButton
-                      action={deleteCauHinhAction.bind(null, item.id)}
-                      confirmMessage={`Xóa cấu hình "${item.key}"?`}
-                    />
-                  </div>
-                </td>
+      <GlassCard className="overflow-hidden p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-admin-border/12 text-left">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-admin-text-3">Khóa (key)</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-admin-text-3">Giá trị</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-admin-text-3">Ghi chú</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-admin-text-3">Thao tác</th>
               </tr>
-            ))}
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-slate-400">
-                  Chưa có cấu hình nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-admin-border/10">
+              {items.map((item) => (
+                <tr key={item.id} className="transition-colors hover:bg-admin-primary/5">
+                  <td className="px-4 py-2.5">
+                    <code className="rounded bg-admin-text-3/10 px-1.5 py-0.5 text-xs text-admin-text-2">{item.key}</code>
+                  </td>
+                  <td className="max-w-md truncate px-4 py-2.5 text-admin-text-2">{item.value || '—'}</td>
+                  <td className="px-4 py-2.5 text-admin-text-3">{item.description || '—'}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        href={`/admin/cau-hinh/${item.id}`}
+                        className="flex size-8 items-center justify-center rounded-admin-sm border border-admin-border/20 text-admin-text-2 transition-colors hover:border-admin-primary/40 hover:text-admin-primary"
+                      >
+                        <Pencil className="size-3.5" />
+                      </Link>
+                      <ConfirmDeleteButton
+                        action={deleteCauHinhAction.bind(null, item.id)}
+                        confirmMessage={`Xóa cấu hình "${item.key}"?`}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-10 text-center text-admin-text-3">
+                    Chưa có cấu hình nào.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
     </div>
   )
 }

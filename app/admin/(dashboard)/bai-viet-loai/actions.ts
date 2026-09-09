@@ -4,14 +4,13 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
-import { getSession } from '@/lib/auth'
+import { sanitizeRichText } from '@/lib/sanitize'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 import type { ContentStatus } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/bai-viet-loai')
 }
 
 function readForm(formData: FormData) {
@@ -25,7 +24,7 @@ function readForm(formData: FormData) {
     parentId: formData.get('parentId') ? Number(formData.get('parentId')) : null,
     sortOrder: formData.get('sortOrder') ? Number(formData.get('sortOrder')) : 0,
     status: String(formData.get('status') || 'PUBLISHED') as ContentStatus,
-    descriptionHtml: String(formData.get('descriptionHtml') || '') || null,
+    descriptionHtml: sanitizeRichText(String(formData.get('descriptionHtml') || '')) || null,
   }
 }
 

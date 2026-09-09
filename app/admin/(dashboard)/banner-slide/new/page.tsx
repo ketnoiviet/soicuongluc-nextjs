@@ -5,10 +5,8 @@ import { createBannerSlideAction } from '../actions'
 export default function NewBannerSlidePage() {
   return (
     <div>
-      <PageHeader title="Thêm banner" />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <BannerSlideForm action={createBannerSlideAction} />
-      </div>
+      <PageHeader title="Thêm banner" backHref="/admin/banner-slide" />
+      <BannerSlideForm action={createBannerSlideAction} />
     </div>
   )
 }

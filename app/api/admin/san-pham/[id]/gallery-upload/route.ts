@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { getSession } from '@/lib/auth'
+import { checkAdminPathAccess } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { saveProductGalleryImage } from '@/lib/upload'
 import { PRODUCT_GALLERY_MAX_FILES as MAX_FILES } from '@/lib/constants'
@@ -9,8 +9,8 @@ import { PRODUCT_GALLERY_MAX_FILES as MAX_FILES } from '@/lib/constants'
 // qua saveProductGalleryImage, lưu phẳng vào uploads/imgproducts theo tên slug sản phẩm).
 // Dùng route riêng (không phải Server Action) để client theo dõi được % tiến trình upload qua XHR.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Không có quyền truy cập.' }, { status: 401 })
+  const access = await checkAdminPathAccess('/admin/san-pham')
+  if (!access.ok) return NextResponse.json({ error: 'Không có quyền truy cập.' }, { status: access.reason === 'unauthenticated' ? 401 : 403 })
 
   const productId = Number(params.id)
   if (!Number.isFinite(productId)) return NextResponse.json({ error: 'Sản phẩm không hợp lệ.' }, { status: 400 })

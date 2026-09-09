@@ -24,6 +24,21 @@ const nextConfig = {
       { source: '/uploadwb/:path*', destination: '/uploads/:path*' },
     ]
   },
+  // Security header cơ bản áp cho mọi route - lớp phòng thủ-theo-chiều-sâu, không thay thế
+  // việc vá lỗi ở tầng ứng dụng (vd sanitize richtext) nhưng giảm tác động nếu có sót lọt.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

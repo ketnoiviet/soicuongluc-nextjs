@@ -4,13 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { saveUploadedImage } from '@/lib/upload'
-import { getSession } from '@/lib/auth'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/banner-slide')
 }
 
 function readForm(formData: FormData) {

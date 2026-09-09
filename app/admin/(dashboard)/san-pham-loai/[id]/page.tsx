@@ -16,10 +16,8 @@ export default async function EditSanPhamLoaiPage({ params }: { params: { id: st
 
   return (
     <div>
-      <PageHeader title={`Sửa danh mục: ${item.name}`} />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <SanPhamLoaiForm item={item} parents={parents} action={action} />
-      </div>
+      <PageHeader title={`Sửa danh mục: ${item.name}`} backHref="/admin/san-pham-loai" />
+      <SanPhamLoaiForm item={item} parents={parents} action={action} />
     </div>
   )
 }

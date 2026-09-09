@@ -1,41 +1,64 @@
+import { redirect } from 'next/navigation'
 import ActionForm from '@/app/admin/_components/ActionForm'
 import SubmitButton from '@/app/admin/_components/SubmitButton'
 import PageHeader from '@/app/admin/_components/PageHeader'
-import { ADMIN_ROLE_LABELS } from '@/lib/enums'
+import GlassCard from '@/app/admin/_components/GlassCard'
+import AdminSelect from '@/app/admin/_components/AdminSelect'
+import { getCurrentAdminUser } from '@/lib/auth'
+import { manageableRoles } from '@/lib/permissions'
+import { ADMIN_ROLE_LABELS, type AdminRole } from '@/lib/enums'
+import { MIN_PASSWORD_LENGTH } from '@/lib/constants'
 import { createNguoiDungAction } from '../actions'
 
 const inputCls =
-  'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary'
-const labelCls = 'block text-sm font-medium text-slate-700 mb-1'
+  'w-full rounded-admin-sm border border-admin-border/20 bg-white/70 px-3 py-2 text-sm text-admin-text outline-none placeholder:text-admin-text-3 focus:border-admin-primary/50 focus:ring-2 focus:ring-admin-primary/15 dark:bg-white/5'
+const labelCls = 'mb-1 block text-sm font-medium text-admin-text-2'
+const cardTitleCls = 'mb-4 font-bold text-admin-text'
 
-export default function NewNguoiDungPage() {
+export default async function NewNguoiDungPage() {
+  const viewer = await getCurrentAdminUser()
+  if (!viewer) redirect('/admin/login')
+
+  // Chỉ chào những vai trò mà viewer được phép gán - vd admin thường không thể tự tạo
+  // ra 1 tài khoản superadmin khác (xem canManageRole trong createNguoiDungAction).
+  const roles = manageableRoles(viewer.role as AdminRole)
+
   return (
     <div>
-      <PageHeader title="Thêm tài khoản quản trị" />
-      <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-xl">
-        <ActionForm action={createNguoiDungAction}>
-          <div>
-            <label className={labelCls}>Họ tên</label>
-            <input name="fullName" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Email *</label>
-            <input type="email" name="email" required className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Mật khẩu *</label>
-            <input type="password" name="password" required minLength={6} className={inputCls} />
-            <p className="text-xs text-slate-400 mt-1">Tối thiểu 6 ký tự.</p>
-          </div>
-          <div>
-            <label className={labelCls}>Vai trò</label>
-            <select name="role" defaultValue="ADMIN" className={inputCls}>
-              <option value="ADMIN">{ADMIN_ROLE_LABELS.ADMIN} (toàn quyền)</option>
-              <option value="EDITOR">{ADMIN_ROLE_LABELS.EDITOR}</option>
-            </select>
-          </div>
-          <SubmitButton>Tạo tài khoản</SubmitButton>
-        </ActionForm>
+      <PageHeader title="Thêm tài khoản quản trị" backHref="/admin/nguoi-dung" />
+      <div className="max-w-xl">
+        <GlassCard className="p-5 md:p-6">
+          <h2 className={cardTitleCls}>Thông tin tài khoản</h2>
+          <ActionForm action={createNguoiDungAction}>
+            <div>
+              <label className={labelCls}>Họ tên</label>
+              <input name="fullName" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Email *</label>
+              <input type="email" name="email" required className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Mật khẩu *</label>
+              <input type="password" name="password" required minLength={MIN_PASSWORD_LENGTH} className={inputCls} />
+              <p className="mt-1 text-xs text-admin-text-3">Tối thiểu {MIN_PASSWORD_LENGTH} ký tự.</p>
+            </div>
+            <div>
+              <label className={labelCls}>Vai trò</label>
+              <AdminSelect name="role" defaultValue="EDITOR" className={inputCls}>
+                {roles.map((r: AdminRole) => (
+                  <option key={r} value={r}>
+                    {ADMIN_ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </AdminSelect>
+              <p className="mt-1 text-xs text-admin-text-3">
+                Sau khi tạo, vào "Sửa" trên danh sách để chọn các trang quản trị tài khoản này được phép truy cập.
+              </p>
+            </div>
+            <SubmitButton>Tạo tài khoản</SubmitButton>
+          </ActionForm>
+        </GlassCard>
       </div>
     </div>
   )

@@ -8,10 +8,8 @@ export default async function NewBaiVietLoaiPage() {
 
   return (
     <div>
-      <PageHeader title="Thêm danh mục tin tức" />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <BaiVietLoaiForm parents={parents} action={createBaiVietLoaiAction} />
-      </div>
+      <PageHeader title="Thêm danh mục tin tức" backHref="/admin/bai-viet-loai" />
+      <BaiVietLoaiForm parents={parents} action={createBaiVietLoaiAction} />
     </div>
   )
 }

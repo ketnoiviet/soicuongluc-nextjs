@@ -16,10 +16,8 @@ export default async function EditBaiVietPage({ params }: { params: { id: string
 
   return (
     <div>
-      <PageHeader title={`Sửa bài viết: ${item.title}`} />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <BaiVietForm item={item} categories={categories} action={action} />
-      </div>
+      <PageHeader title={`Sửa bài viết: ${item.title}`} backHref="/admin/bai-viet" />
+      <BaiVietForm item={item} categories={categories} action={action} />
     </div>
   )
 }

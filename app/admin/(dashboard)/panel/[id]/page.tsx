@@ -13,10 +13,8 @@ export default async function EditPanelPage({ params }: { params: { id: string }
 
   return (
     <div>
-      <PageHeader title={`Sửa panel #${item.id}`} />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <PanelForm item={item} action={action} />
-      </div>
+      <PageHeader title={`Sửa panel #${item.id}`} backHref="/admin/panel" />
+      <PanelForm item={item} action={action} />
     </div>
   )
 }

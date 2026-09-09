@@ -5,14 +5,13 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
 import { saveUploadedImage } from '@/lib/upload'
-import { getSession } from '@/lib/auth'
+import { sanitizeRichText } from '@/lib/sanitize'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 import type { ContentStatus } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/san-pham-loai')
 }
 
 function readForm(formData: FormData) {
@@ -27,8 +26,8 @@ function readForm(formData: FormData) {
     parentId: formData.get('parentId') ? Number(formData.get('parentId')) : null,
     sortOrder: formData.get('sortOrder') ? Number(formData.get('sortOrder')) : 0,
     status: String(formData.get('status') || 'PUBLISHED') as ContentStatus,
-    shortDescription: String(formData.get('shortDescription') || '') || null,
-    descriptionHtml: String(formData.get('descriptionHtml') || '') || null,
+    shortDescription: sanitizeRichText(String(formData.get('shortDescription') || '')) || null,
+    descriptionHtml: sanitizeRichText(String(formData.get('descriptionHtml') || '')) || null,
   }
 }
 
@@ -79,6 +78,15 @@ export async function updateSanPhamLoaiAction(id: number, _prevState: ActionStat
 
   revalidatePath('/admin/san-pham-loai')
   redirect('/admin/san-pham-loai')
+}
+
+// Kéo-thả sắp xếp lại thứ tự hiển thị: nhận đúng mảng id theo thứ tự mới sau khi kéo thả
+// (client tính trước), ghi đè sortOrder = vị trí trong mảng - đơn giản, không cần biết vị
+// trí cũ/mới cụ thể là gì ở phía server.
+export async function reorderSanPhamLoaiAction(orderedIds: number[]) {
+  await requireAdmin()
+  await prisma.$transaction(orderedIds.map((id, index) => prisma.productCategory.update({ where: { id }, data: { sortOrder: index + 1 } })))
+  revalidatePath('/admin/san-pham-loai')
 }
 
 export async function deleteSanPhamLoaiAction(id: number) {

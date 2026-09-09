@@ -94,7 +94,68 @@ async function main() {
     ],
   })
 
-  // ===== TÀI KHOẢN ADMIN MẶC ĐỊNH =====
+  // ===== BÀI VIẾT GIỚI THIỆU =====
+  // Chuyển nội dung tĩnh cũ của trang /gioi-thieu (4 section: giới thiệu công ty, đặc tính,
+  // ứng dụng, hệ thống văn phòng) thành 4 bài viết CMS-quản-lý-được thay vì cố định trong code.
+  await prisma.aboutArticle.createMany({
+    data: [
+      {
+        sortOrder: 1,
+        title: 'Về Công ty HARIFA',
+        slug: 've-cong-ty-harifa',
+        thumbnailUrl: '/uploads/hinhanh/about-company.jpg',
+        contentHtml: `<h3>CÔNG TY TNHH SXTMDV HARIFA</h3>
+<p>HARIFA là đơn vị phân phối chính hãng các loại sợi cường lực cao cấp từ các thương hiệu hàng đầu thế giới như <strong>Hyosung (Hàn Quốc)</strong>, <strong>Kolon (Hàn Quốc)</strong>, <strong>Toray (Nhật Bản)</strong>.</p>
+<p>Với hơn 10 năm kinh nghiệm trong ngành, HARIFA tự hào cung cấp đa dạng các loại sợi kỹ thuật cao phục vụ các ngành công nghiệp dệt may, săm lốp, vật liệu gia cố và nhiều ứng dụng công nghiệp khác.</p>
+<p>Hệ thống kho hàng đặt tại TP. Hồ Chí Minh, Hà Nội và Đà Nẵng giúp HARIFA phục vụ khách hàng nhanh chóng, kịp thời trên toàn quốc.</p>`,
+        status: 'PUBLISHED',
+      },
+      {
+        sortOrder: 2,
+        title: 'Đặc tính sợi cường lực',
+        slug: 'dac-tinh-soi-cuong-luc',
+        contentHtml: `<p>Các thông số kỹ thuật nổi bật của sợi cường lực HARIFA:</p>
+<ul>
+<li><strong>Độ bền kéo cao</strong>: Tenacity đạt 6–9 g/denier, vượt trội so với sợi thông thường</li>
+<li><strong>Chịu nhiệt tốt</strong>: Ổn định cấu trúc ở nhiệt độ cao, phù hợp quy trình công nghiệp</li>
+<li><strong>Chống hóa chất</strong>: Kháng axit, kiềm và nhiều hóa chất công nghiệp phổ biến</li>
+<li><strong>Trọng lượng nhẹ</strong>: Tỷ lệ độ bền/trọng lượng vượt trội so với kim loại truyền thống</li>
+<li><strong>Độ co ngót thấp</strong>: Shrinkage thấp giúp sản phẩm ổn định kích thước trong quá trình gia công</li>
+<li><strong>Kết dính tốt</strong>: Tương thích cao với cao su và nhựa trong ứng dụng gia cố</li>
+</ul>`,
+        status: 'PUBLISHED',
+      },
+      {
+        sortOrder: 3,
+        title: 'Ứng dụng của sợi cường lực',
+        slug: 'ung-dung-soi-cuong-luc',
+        contentHtml: `<p>Sợi cường lực HARIFA được sử dụng rộng rãi trong nhiều ngành công nghiệp:</p>
+<h4>Công nghiệp lốp xe &amp; Ô tô</h4>
+<ul><li>Tire cord (dây cốt lốp)</li><li>Bead wire (dây tanh)</li><li>Airbag fabric</li><li>Belt và hose ô tô</li></ul>
+<h4>Dệt may &amp; Vải kỹ thuật</h4>
+<ul><li>Vải dù bảo hộ</li><li>Dây đai công nghiệp</li><li>Vải địa kỹ thuật</li><li>Lưới an toàn</li></ul>
+<h4>Composite &amp; Vật liệu mới</h4>
+<ul><li>Gia cố nhựa composite</li><li>Thanh FRP xây dựng</li><li>Vỏ tàu thuyền</li><li>Cánh tuabin gió</li></ul>
+<h4>Hàng không &amp; Công nghiệp nặng</h4>
+<ul><li>Cáp cẩu &amp; neo</li><li>Dây an toàn leo núi</li><li>Cáp băng tải</li><li>Vải lọc công nghiệp</li></ul>`,
+        status: 'PUBLISHED',
+      },
+      {
+        sortOrder: 4,
+        title: 'Hệ thống văn phòng & kho hàng',
+        slug: 'he-thong-van-phong-kho-hang',
+        contentHtml: `<ul>
+<li><strong>TP. Hồ Chí Minh</strong> (Văn phòng &amp; Kho): 154 Phạm Phú Thứ, P. Bảy Hiền, TP.HCM - 📞 0916 666 779</li>
+<li><strong>Hà Nội</strong> (Văn phòng): 96 Lô F4, KĐT Đại Kim - Định Công, P. Định Công, HN - 📞 0909 829 439</li>
+<li><strong>Đà Nẵng</strong> (Văn phòng): 06 Thái Thị Bôi, Xã Nam Phước, TP. Đà Nẵng - 📞 0916 666 779</li>
+<li><strong>Tổng kho</strong> (Kho hàng chính): 27/71 Xuân Thới Thượng 59, Ấp 7, Xã Bà Điểm, TP.HCM - 📞 0916 666 779</li>
+</ul>`,
+        status: 'PUBLISHED',
+      },
+    ],
+  })
+
+  // ===== TÀI KHOẢN ADMIN MẶC ĐỊNH (dành cho khách hàng - chủ website) =====
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@harifavn.com'
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
   const existAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } })
@@ -105,6 +166,24 @@ async function main() {
     })
   }
 
+  // ===== TÀI KHOẢN SUPERADMIN (ẩn, dành cho nhà phát triển) =====
+  // Toàn quyền, không hiển thị/không quản lý được từ tài khoản ADMIN trở xuống (xem
+  // lib/permissions.ts - canManageRole). Không đặt fallback mật khẩu cứng trong code
+  // như khối ADMIN ở trên - đây là tài khoản nhạy cảm, bắt buộc phải khai báo qua .env
+  // (không commit) để mật khẩu thật không bao giờ nằm trong lịch sử git. Bỏ qua nếu
+  // thiếu biến môi trường hoặc nếu email đã tồn tại (không ghi đè mật khẩu khi seed lại).
+  const superadminEmail = process.env.SUPERADMIN_EMAIL
+  const superadminPassword = process.env.SUPERADMIN_PASSWORD
+  if (superadminEmail && superadminPassword) {
+    const existSuperadmin = await prisma.adminUser.findUnique({ where: { email: superadminEmail } })
+    if (!existSuperadmin) {
+      const hash = await bcrypt.hash(superadminPassword, 10)
+      await prisma.adminUser.create({
+        data: { fullName: 'Superadmin', email: superadminEmail, passwordHash: hash, role: 'SUPERADMIN', isActive: true },
+      })
+    }
+  }
+
   console.log('✅ Seed hoàn tất!')
   console.log('   - Cấu hình website: OK')
   console.log('   - Banner slide: 5 ảnh')
@@ -112,7 +191,13 @@ async function main() {
   console.log('   - Sản phẩm: 15 sản phẩm')
   console.log('   - Danh mục bài viết: 7 loại')
   console.log('   - Bài viết/Tin tức: 8 bài')
+  console.log('   - Bài viết giới thiệu: 4 bài')
   console.log(`   - Tài khoản admin: ${adminEmail} / mật khẩu: ${existAdmin ? '(đã tồn tại, giữ nguyên)' : adminPassword}`)
+  console.log(
+    superadminEmail && superadminPassword
+      ? `   - Tài khoản superadmin (ẩn): ${superadminEmail} (mật khẩu lấy từ .env, không in ra đây)`
+      : '   - Tài khoản superadmin: bỏ qua (thiếu SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD trong .env)'
+  )
   console.log('   ⚠️  Hãy đổi mật khẩu ngay sau khi đăng nhập lần đầu!')
 }
 

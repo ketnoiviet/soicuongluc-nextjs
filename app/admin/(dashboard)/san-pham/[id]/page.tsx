@@ -8,9 +8,10 @@ import ProductDimensions from './ProductDimensions'
 
 export default async function EditSanPhamPage({ params }: { params: { id: string } }) {
   const id = Number(params.id)
-  const [item, categories, images, dimensions, redirects] = await Promise.all([
+  const [item, categories, suppliers, images, dimensions, redirects] = await Promise.all([
     prisma.product.findUnique({ where: { id } }),
     prisma.productCategory.findMany({ orderBy: { sortOrder: 'asc' } }),
+    prisma.supplier.findMany({ orderBy: { name: 'asc' } }),
     prisma.productImage.findMany({ where: { productId: id }, orderBy: { sortOrder: 'asc' } }),
     prisma.productDimension.findMany({ where: { productId: id }, orderBy: { sortOrder: 'asc' } }),
     prisma.productRedirect.findMany({ where: { productId: id }, orderBy: { createdAt: 'desc' } }),
@@ -24,7 +25,14 @@ export default async function EditSanPhamPage({ params }: { params: { id: string
     <div className="space-y-5">
       <div>
         <PageHeader title={`Sửa sản phẩm: ${item.name}`} backHref="/admin/san-pham" />
-        <SanPhamForm item={item} categories={categories} action={action} redirects={redirects} deleteRedirectAction={deleteRedirectAction} />
+        <SanPhamForm
+          item={item}
+          categories={categories}
+          suppliers={suppliers}
+          action={action}
+          redirects={redirects}
+          deleteRedirectAction={deleteRedirectAction}
+        />
       </div>
 
       <ProductGallery idSP={id} images={images} />

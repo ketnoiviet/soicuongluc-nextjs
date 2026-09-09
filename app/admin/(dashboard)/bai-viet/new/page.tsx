@@ -8,10 +8,8 @@ export default async function NewBaiVietPage() {
 
   return (
     <div>
-      <PageHeader title="Thêm bài viết" />
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <BaiVietForm categories={categories} action={createBaiVietAction} />
-      </div>
+      <PageHeader title="Thêm bài viết" backHref="/admin/bai-viet" />
+      <BaiVietForm categories={categories} action={createBaiVietAction} />
     </div>
   )
 }

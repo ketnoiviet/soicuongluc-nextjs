@@ -1,15 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ContactStatus } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/lien-he')
 }
 
 export async function setLienHeStatusAction(id: number, status: ContactStatus) {

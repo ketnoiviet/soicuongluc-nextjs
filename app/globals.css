@@ -640,6 +640,22 @@ ul { list-style: none; padding: 0; margin: 0; }
   background-color: rgb(var(--admin-bg));
 }
 
+/* `color-scheme` tells the browser to paint its own native UI - <select> popup
+   lists, date/time pickers, scrollbars, checkbox ticks - with dark colors. Without
+   this, those popups stay hard-coded white even though every Tailwind class we set
+   is dark-aware, because native popups aren't part of the DOM box our CSS can reach.
+   Setting it on .admin-root alone is NOT enough: Chromium decides the <select>
+   popup's theme from the color-scheme resolved on the <html> root, not on a nested
+   ancestor, even though .admin-root itself correctly inherits/computes "dark" (verified
+   via getComputedStyle - it does, the popup still ignored it). next-themes'
+   attribute="class" always toggles the "dark" class on <html> itself (that's how
+   Tailwind's darkMode:['class'] selector already works for every other .dark rule
+   here), and the public site never mounts ThemeProvider so this class is only ever
+   present while inside the admin panel - safe to key off it at the root. */
+.dark {
+  color-scheme: dark;
+}
+
 /* "gradient mesh" nền mờ ở 3 góc, đặt sau nội dung (z-index âm) */
 .admin-mesh {
   pointer-events: none;

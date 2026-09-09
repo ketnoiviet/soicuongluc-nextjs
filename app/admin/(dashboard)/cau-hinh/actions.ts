@@ -3,13 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/auth'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/cau-hinh')
 }
 
 export async function createCauHinhAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {

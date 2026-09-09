@@ -33,7 +33,7 @@ export default function DeleteAndGoBack({
           })
         }
       }}
-      className="text-xs px-2.5 py-1.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+      className="rounded-admin-sm border border-admin-rose/25 px-2.5 py-1.5 text-xs font-medium text-admin-rose transition-colors hover:bg-admin-rose/10 disabled:opacity-50"
     >
       {isPending ? 'Đang xóa...' : label}
     </button>

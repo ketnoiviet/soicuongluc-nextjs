@@ -4,11 +4,12 @@ import SubmitButton from '@/app/admin/_components/SubmitButton'
 import RichTextEditor from '@/app/admin/_components/RichTextEditor'
 import GlassCard from '@/app/admin/_components/GlassCard'
 import ToggleField from '@/app/admin/_components/ToggleField'
+import AdminSelect from '@/app/admin/_components/AdminSelect'
 import SlugAutoFill from './SlugAutoFill'
 import ProductSeoBox from './ProductSeoBox'
 import { getImageUrl } from '@/lib/utils'
 import { CONTENT_STATUSES, CONTENT_STATUS_LABELS } from '@/lib/enums'
-import type { Product, ProductCategory, ProductRedirect } from '@prisma/client'
+import type { Product, ProductCategory, ProductRedirect, Supplier } from '@prisma/client'
 
 const inputCls =
   'w-full rounded-admin-sm border border-admin-border/20 bg-white/70 px-3 py-2 text-sm text-admin-text outline-none placeholder:text-admin-text-3 focus:border-admin-primary/50 focus:ring-2 focus:ring-admin-primary/15 dark:bg-white/5'
@@ -18,12 +19,14 @@ const cardTitleCls = 'mb-4 font-bold text-admin-text'
 export default function SanPhamForm({
   item,
   categories,
+  suppliers,
   action,
   redirects = [],
   deleteRedirectAction,
 }: {
   item?: Product
   categories: ProductCategory[]
+  suppliers: Supplier[]
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>
   redirects?: ProductRedirect[]
   deleteRedirectAction?: (redirectId: number) => Promise<void>
@@ -44,14 +47,14 @@ export default function SanPhamForm({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Danh mục *</label>
-                  <select name="categoryId" defaultValue={item?.categoryId ?? ''} required className={inputCls}>
+                  <AdminSelect name="categoryId" defaultValue={item?.categoryId ?? ''} required className={inputCls}>
                     <option value="">— Chọn danh mục —</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
-                  </select>
+                  </AdminSelect>
                 </div>
                 <div>
                   <label className={labelCls}>Mã sản phẩm (SKU)</label>
@@ -72,7 +75,14 @@ export default function SanPhamForm({
 
               <div>
                 <label className={labelCls}>Nhà sản xuất</label>
-                <input name="manufacturer" defaultValue={item?.manufacturer || ''} className={inputCls} />
+                <AdminSelect name="supplierId" defaultValue={item?.supplierId ?? ''} className={inputCls}>
+                  <option value="">— Chọn nhà sản xuất —</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </AdminSelect>
               </div>
 
               <div>
@@ -165,13 +175,13 @@ export default function SanPhamForm({
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Trạng thái</label>
-                <select name="status" defaultValue={item?.status || 'PUBLISHED'} className={inputCls}>
+                <AdminSelect name="status" defaultValue={item?.status || 'PUBLISHED'} className={inputCls}>
                   {CONTENT_STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {CONTENT_STATUS_LABELS[s]}
                     </option>
                   ))}
-                </select>
+                </AdminSelect>
               </div>
               <div className="divide-y divide-admin-border/10">
                 <ToggleField name="isFeatured" label="Sản phẩm nổi bật" description="Ghim ở trang chủ" defaultChecked={item?.isFeatured} />

@@ -4,15 +4,15 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { slugify, stripHtml } from '@/lib/utils'
-import { saveProductImage, deleteUploadedFile, extractImageSrcs } from '@/lib/upload'
-import { getSession } from '@/lib/auth'
+import { saveProductImage, deleteUploadedFile } from '@/lib/upload'
+import { deleteProductWithFiles } from '@/lib/product-delete'
+import { sanitizeRichText } from '@/lib/sanitize'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
-import type { ContentStatus } from '@/lib/enums'
+import { CONTENT_STATUS_LABELS, type ContentStatus } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/san-pham')
 }
 
 function num(formData: FormData, key: string): number | null {
@@ -33,15 +33,15 @@ function readForm(formData: FormData) {
     slug,
     categoryId: num(formData, 'categoryId'),
     sku: String(formData.get('sku') || '') || null,
-    manufacturer: String(formData.get('manufacturer') || '') || null,
+    supplierId: num(formData, 'supplierId'),
     sortOrder: num(formData, 'sortOrder') ?? 0,
     price: num(formData, 'price'),
     salePrice: num(formData, 'salePrice'),
     unit: String(formData.get('unit') || '') || null,
-    shortDescription: String(formData.get('shortDescription') || '') || null,
-    descriptionHtml: String(formData.get('descriptionHtml') || '') || null,
-    specificationsHtml: String(formData.get('specificationsHtml') || '') || null,
-    applicationsHtml: String(formData.get('applicationsHtml') || '') || null,
+    shortDescription: sanitizeRichText(String(formData.get('shortDescription') || '')) || null,
+    descriptionHtml: sanitizeRichText(String(formData.get('descriptionHtml') || '')) || null,
+    specificationsHtml: sanitizeRichText(String(formData.get('specificationsHtml') || '')) || null,
+    applicationsHtml: sanitizeRichText(String(formData.get('applicationsHtml') || '')) || null,
     status: String(formData.get('status') || 'PUBLISHED') as ContentStatus,
     isFeatured: formData.get('isFeatured') === 'on',
     isNew: formData.get('isNew') === 'on',
@@ -133,27 +133,111 @@ export async function updateSanPhamAction(id: number, _prevState: ActionState, f
 
 export async function deleteSanPhamAction(id: number) {
   await requireAdmin()
+  await deleteProductWithFiles(id)
+  revalidatePath('/admin/san-pham')
+}
 
-  const product = await prisma.product.findUnique({ where: { id }, include: { images: true } })
-  if (!product) return
+// Xoá hàng loạt (chọn checkbox trên danh sách) - cùng rule dọn file vật lý như xoá đơn lẻ,
+// chạy tuần tự (không Promise.all) để tránh nhiều tiến trình sharp xử lý ảnh cùng lúc khi
+// admin chọn xoá số lượng lớn.
+export async function bulkDeleteSanPhamAction(ids: number[]) {
+  await requireAdmin()
+  for (const id of ids) await deleteProductWithFiles(id)
+  revalidatePath('/admin/san-pham')
+}
 
-  await prisma.productImage.deleteMany({ where: { productId: id } })
-  await prisma.productDimension.deleteMany({ where: { productId: id } })
-  await prisma.productRedirect.deleteMany({ where: { productId: id } })
-  await prisma.product.delete({ where: { id } })
+// ===== Nhập Excel (xem lib/product-excel.ts cho thứ tự cột dùng chung với route export) =====
+export async function importSanPhamExcelAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdmin()
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { error: 'Vui lòng chọn file Excel (.xlsx) để nhập.' }
 
-  // Dọn toàn bộ file ảnh thuộc sản phẩm: ảnh đại diện (thumbnail/ảnh lớn), ảnh chèn trong các
-  // RichTextEditor (mô tả ngắn/chi tiết/thông số/ứng dụng), và thư viện ảnh sản phẩm.
-  // Best-effort sau khi đã xoá record chính - lỗi xoá file không được chặn thao tác xoá sản phẩm.
-  const urls = new Set<string>()
-  ;[product.thumbnailUrl, product.coverImageUrl].forEach((u) => u && urls.add(u))
-  product.images.forEach((img) => urls.add(img.imageUrl))
-  ;[product.shortDescription, product.descriptionHtml, product.specificationsHtml, product.applicationsHtml].forEach((html) => {
-    extractImageSrcs(html).forEach((src) => urls.add(src))
-  })
-  await Promise.all(Array.from(urls, deleteUploadedFile))
+  const ExcelJS = (await import('exceljs')).default
+  const workbook = new ExcelJS.Workbook()
+  try {
+    await workbook.xlsx.load(await file.arrayBuffer())
+  } catch {
+    return { error: 'File không đúng định dạng Excel (.xlsx).' }
+  }
+
+  const sheet = workbook.worksheets[0]
+  if (!sheet) return { error: 'File Excel không có dữ liệu.' }
+
+  const categories = await prisma.productCategory.findMany({ select: { id: true, name: true } })
+  const categoryByName = new Map(categories.map((c) => [c.name.trim().toLowerCase(), c.id]))
+  const statusByLabel = new Map(
+    Object.entries(CONTENT_STATUS_LABELS).map(([status, label]) => [label.trim().toLowerCase(), status as ContentStatus])
+  )
+
+  let created = 0
+  let updated = 0
+  const errors: string[] = []
+
+  // Dòng 1 là header (theo đúng thứ tự PRODUCT_EXCEL_COLUMNS ở trên) - bắt đầu đọc từ dòng 2.
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber)
+    if (row.cellCount === 0 || !row.getCell(1).value) continue
+
+    const name = String(row.getCell(1).value || '').trim()
+    const sku = String(row.getCell(2).value || '').trim() || null
+    const price = row.getCell(3).value ? Number(row.getCell(3).value) : null
+    const unit = String(row.getCell(4).value || '').trim() || null
+    const salePrice = row.getCell(5).value ? Number(row.getCell(5).value) : null
+    const categoryName = String(row.getCell(6).value || '').trim()
+    const statusLabel = String(row.getCell(7).value || '').trim()
+
+    if (!name) {
+      errors.push(`Dòng ${rowNumber}: thiếu tên sản phẩm.`)
+      continue
+    }
+
+    const categoryId = categoryName ? categoryByName.get(categoryName.toLowerCase()) : undefined
+    if (categoryName && !categoryId) {
+      errors.push(`Dòng ${rowNumber}: không tìm thấy danh mục "${categoryName}".`)
+      continue
+    }
+
+    const status = statusLabel ? statusByLabel.get(statusLabel.toLowerCase()) : undefined
+    if (statusLabel && !status) {
+      errors.push(`Dòng ${rowNumber}: không nhận dạng được tình trạng "${statusLabel}".`)
+      continue
+    }
+
+    const data = {
+      name,
+      price: price ?? null,
+      unit,
+      salePrice: salePrice ?? null,
+      ...(categoryId ? { categoryId } : {}),
+      ...(status ? { status } : {}),
+    }
+
+    try {
+      const existing = sku ? await prisma.product.findUnique({ where: { sku } }) : null
+      if (existing) {
+        await prisma.product.update({ where: { id: existing.id }, data })
+        updated++
+      } else {
+        if (!categoryId) {
+          errors.push(`Dòng ${rowNumber}: sản phẩm mới bắt buộc phải có Danh mục hợp lệ.`)
+          continue
+        }
+        await prisma.product.create({ data: { ...data, sku, slug: slugify(name) + '-' + Date.now(), categoryId } })
+        created++
+      }
+    } catch (e) {
+      errors.push(`Dòng ${rowNumber}: ${e instanceof Error ? e.message : 'lỗi không xác định'}`)
+    }
+  }
 
   revalidatePath('/admin/san-pham')
+
+  if (created === 0 && updated === 0 && errors.length > 0) {
+    return { error: `Không nhập được dòng nào. ${errors.join(' ')}` }
+  }
+  return {
+    success: `Đã tạo mới ${created}, cập nhật ${updated} sản phẩm.${errors.length > 0 ? ` ${errors.length} dòng lỗi: ${errors.join(' ')}` : ''}`,
+  }
 }
 
 // ===== Gallery ảnh phụ =====

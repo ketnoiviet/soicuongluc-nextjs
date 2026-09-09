@@ -33,6 +33,24 @@ datasource db {
 // SẢN PHẨM
 // ============================================================================
 
+/// Xoá 1 Supplier phải xoá theo toàn bộ Product của supplier đó (yêu cầu nghiệp vụ -
+/// không phải mồ côi categoryId=null như khi xoá category) - xử lý thủ công trong
+/// action (dọn file ảnh vật lý trước) rồi mới xoá record, không dùng onDelete: Cascade
+/// ở DB vì Cascade sẽ xoá thẳng DB row mà bỏ qua bước dọn file trên đĩa.
+model Supplier {
+  id              Int     @id @default(autoincrement())
+  name            String
+  logoUrl         String? @map("logo_url")
+  website         String?
+  descriptionHtml String? @map("description_html")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("suppliers")
+}
+
 model ProductCategory {
   id       Int    @id @default(autoincrement())
   parentId Int?   @map("parent_id")
@@ -72,7 +90,7 @@ model Product {
   name       String
   slug       String  @unique
 
-  manufacturer String?
+  supplierId Int? @map("supplier_id")
 
   thumbnailUrl       String? @map("thumbnail_url")
   coverImageUrl      String? @map("cover_image_url")
@@ -102,6 +120,7 @@ model Product {
   createdAt DateTime @default(now()) @map("created_at")
 
   category   ProductCategory?   @relation(fields: [categoryId], references: [id])
+  supplier   Supplier?          @relation(fields: [supplierId], references: [id])
   images     ProductImage[]
   dimensions ProductDimension[]
   redirects  ProductRedirect[]
@@ -205,6 +224,30 @@ model NewsArticle {
 }
 
 // ============================================================================
+// GIỚI THIỆU
+// ============================================================================
+
+/// Danh sách bài viết Giới thiệu (menu "Giới thiệu" ở public site trỏ tới danh
+/// sách này thay vì 1 trang tĩnh cố định như trước) - không có category, phẳng
+/// như NewsArticle nhưng bớt các field không cần (excerpt/author/viewCount...).
+model AboutArticle {
+  id        Int    @id @default(autoincrement())
+  sortOrder Int    @default(0) @map("sort_order")
+  title     String
+  slug      String @unique
+
+  thumbnailUrl String? @map("thumbnail_url")
+  contentHtml  String? @map("content_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("about_articles")
+}
+
+// ============================================================================
 // GIAO DIỆN
 // ============================================================================
 
@@ -232,6 +275,148 @@ model AdPanel {
   status String @default("PUBLISHED")
 
   @@map("ad_panels")
+}
+
+// ============================================================================
+// MARKETING (trang chủ)
+// ============================================================================
+
+model WhyChooseUsItem {
+  id          Int     @id @default(autoincrement())
+  sortOrder   Int     @default(0) @map("sort_order")
+  title       String
+  description String?
+  iconUrl     String? @map("icon_url")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("why_choose_us_items")
+}
+
+model Testimonial {
+  id           Int     @id @default(autoincrement())
+  sortOrder    Int     @default(0) @map("sort_order")
+  customerName String  @map("customer_name")
+  /// Chức vụ / công ty khách hàng - vd "Giám đốc mua hàng, Công ty ABC"
+  position     String?
+  avatarUrl    String? @map("avatar_url")
+  /// 1-5 sao
+  rating       Int     @default(5)
+  content      String?
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("testimonials")
+}
+
+model Faq {
+  id         Int     @id @default(autoincrement())
+  sortOrder  Int     @default(0) @map("sort_order")
+  question   String
+  answerHtml String? @map("answer_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("faqs")
+}
+
+/// Logo đối tác / khách hàng tiêu biểu hiển thị dạng dải logo ở trang chủ - cố ý tối
+/// giản (không có mô tả/richtext) đúng theo 3 field yêu cầu: tên, logo, website.
+model Partner {
+  id        Int     @id @default(autoincrement())
+  sortOrder Int     @default(0) @map("sort_order")
+  name      String
+  logoUrl   String? @map("logo_url")
+  website   String?
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("partners")
+}
+
+// ============================================================================
+// TRANG NỘI DUNG (Quy định chung, Chính sách bảo mật, Chính sách bảo hành...)
+// ============================================================================
+
+model ContentPage {
+  id          Int     @id @default(autoincrement())
+  sortOrder   Int     @default(0) @map("sort_order")
+  title       String
+  slug        String  @unique
+  contentHtml String? @map("content_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("content_pages")
+}
+
+// ============================================================================
+// THƯ VIỆN (ẢNH & VIDEO)
+// ============================================================================
+
+/// Album ảnh - ảnh thật nằm ở GalleryPhoto, album chỉ giữ metadata + thứ tự.
+/// Ảnh đại diện album lấy từ ảnh có sortOrder nhỏ nhất trong GalleryPhoto, không
+/// lưu field riêng để tránh phải đồng bộ 2 nơi khi thêm/xoá/sắp xếp lại ảnh.
+model GalleryAlbum {
+  id        Int    @id @default(autoincrement())
+  sortOrder Int    @default(0) @map("sort_order")
+  title     String
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  photos GalleryPhoto[]
+
+  @@map("gallery_albums")
+}
+
+model GalleryPhoto {
+  id        Int    @id @default(autoincrement())
+  albumId   Int    @map("album_id")
+  sortOrder Int    @default(0) @map("sort_order")
+  imageUrl  String @map("image_url")
+
+  album GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@map("gallery_photos")
+}
+
+model Video {
+  id        Int     @id @default(autoincrement())
+  sortOrder Int     @default(0) @map("sort_order")
+  title     String?
+
+  thumbnailUrl String? @map("thumbnail_url")
+  videoUrl     String  @map("video_url")
+
+  /// enum VideoSource: "YOUTUBE" | "FACEBOOK" | "OTHER" - tự nhận dạng từ videoUrl khi lưu (xem lib/video.ts)
+  videoSource String @default("OTHER") @map("video_source")
+
+  descriptionHtml String? @map("description_html")
+
+  /// enum ContentStatus: "PUBLISHED" | "HIDDEN" | "ARCHIVED"
+  status String @default("PUBLISHED")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("videos")
 }
 
 // ============================================================================
@@ -271,8 +456,13 @@ model AdminUser {
   /// bcrypt hash — tên rõ nghĩa hơn "mat_khau" cũ, nhấn mạnh không phải plaintext.
   passwordHash String  @map("password_hash")
 
-  /// enum AdminRole: "ADMIN" | "EDITOR"
+  /// enum AdminRole: "SUPERADMIN" | "ADMIN" | "EDITOR"
   role String @default("ADMIN")
+
+  /// Mảng JSON các href trang quản trị được phép truy cập, vd ["/admin/san-pham"].
+  /// NULL = toàn quyền (mặc định cho user cũ/tạo mới) — bị bỏ qua hoàn toàn với role
+  /// "SUPERADMIN", vai trò này luôn toàn quyền bất kể cột này chứa gì.
+  permissions String? @map("permissions")
 
   isActive    Boolean   @default(true) @map("is_active")
   lastLoginAt DateTime? @map("last_login_at")
@@ -288,4 +478,58 @@ model SiteSetting {
   description String?
 
   @@map("site_settings")
+}
+
+/// Cấu hình SEO dạng single-row (luôn dùng id = 1, xem lib/seo-settings.ts) - đọc bởi
+/// RootLayout.generateMetadata() để dựng thẻ <head> cho trang chủ; một số field (og:image,
+/// twitter:image, logo...) cũng có thể tái dùng ở trang khác khi cần.
+model SeoSetting {
+  id Int @id @default(1)
+
+  // Thẻ SEO cốt lõi
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+  canonicalUrl    String? @map("canonical_url")
+  robotsMeta      String  @default("index, follow") @map("robots_meta")
+
+  // Open Graph & Twitter Card
+  ogType             String  @default("website") @map("og_type")
+  ogUrl              String? @map("og_url")
+  ogTitle            String? @map("og_title")
+  ogDescription      String? @map("og_description")
+  ogImage            String? @map("og_image")
+  twitterCard        String  @default("summary_large_image") @map("twitter_card")
+  twitterTitle       String? @map("twitter_title")
+  twitterDescription String? @map("twitter_description")
+  twitterImage       String? @map("twitter_image")
+
+  // Logo & Favicon
+  logoUrl           String? @map("logo_url")
+  faviconUrl        String  @default("/favicon.ico") @map("favicon_url")
+  appleTouchIconUrl String  @default("/apple-touch-icon.png") @map("apple_touch_icon_url")
+
+  /// enum StructuredDataType: "Organization" | "LocalBusiness" | "WebSite" | "Product" | "BreadcrumbList"
+  structuredDataType String  @default("Organization") @map("structured_data_type")
+  structuredDataJson String? @map("structured_data_json")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("seo_settings")
+}
+
+/// Nhật ký sự kiện bảo mật (đăng nhập thất bại, bị chặn do rate-limit, từ chối quyền truy cập)
+/// - ghi bởi lib/security-log.ts, best-effort (không throw), phục vụ truy vết khi có sự cố.
+model SecurityLog {
+  id Int @id @default(autoincrement())
+
+  /// enum SecurityEventType: "LOGIN_FAILED" | "LOGIN_RATE_LIMITED" | "PERMISSION_DENIED"
+  eventType String  @map("event_type")
+  detail    String?
+  ipAddress String? @map("ip_address")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("security_logs")
 }

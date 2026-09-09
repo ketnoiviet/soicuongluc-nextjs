@@ -18,6 +18,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { navGroups } from './nav-data'
+import { isPathAllowed } from '@/lib/permissions'
+import type { AdminRole } from '@/lib/enums'
 
 function CollapseToggle() {
   const { toggleSidebar, state } = useSidebar()
@@ -33,9 +35,15 @@ function CollapseToggle() {
   )
 }
 
-export default function AppSidebar() {
+export default function AppSidebar({ role, allowedHrefs }: { role: AdminRole; allowedHrefs: string[] | null }) {
   const pathname = usePathname()
   const isActive = (href: string) => (href === '/admin' ? pathname === '/admin' : pathname.startsWith(href))
+
+  // Không hiện link mà chính user này bấm vào cũng sẽ bị chặn (xem layout.tsx) - tránh
+  // để mục sidebar dẫn thẳng tới trang "không có quyền".
+  const visibleGroups = navGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => isPathAllowed(item.href, role, allowedHrefs)) }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <Sidebar collapsible="icon">
@@ -60,7 +68,7 @@ export default function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="gap-0 px-1">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="px-2 text-[11px] font-semibold uppercase tracking-wide text-admin-text-3">
               {group.label}

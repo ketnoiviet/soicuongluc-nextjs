@@ -1,8 +1,14 @@
 import { SignJWT, jwtVerify } from 'jose'
 import type { AdminRole } from '@/lib/enums'
 
-// Khóa ký JWT - đọc từ biến môi trường, có fallback cho môi trường dev
-const secretKey = process.env.JWT_SECRET || 'dev-only-secret-change-in-env'
+// Khóa ký JWT - bắt buộc phải có trong môi trường. KHÔNG dùng giá trị fallback hard-code: một
+// khoá mặc định ai đọc mã nguồn cũng biết sẽ cho phép giả mạo JWT hợp lệ (kể cả session
+// superadmin) nếu biến môi trường vô tình chưa được nạp lúc deploy - thà app không chạy được
+// còn hơn chạy "fail-open" với khoá đoán trước được.
+const secretKey = process.env.JWT_SECRET
+if (!secretKey) {
+  throw new Error('Thiếu biến môi trường JWT_SECRET - xem .env.example.')
+}
 const encodedKey = new TextEncoder().encode(secretKey)
 
 export const SESSION_COOKIE = 'admin_session'

@@ -5,14 +5,13 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
 import { saveUploadedImage } from '@/lib/upload'
-import { getSession } from '@/lib/auth'
+import { sanitizeRichText } from '@/lib/sanitize'
+import { requireAdminForPath } from '@/lib/auth'
 import type { ActionState } from '@/app/admin/_components/ActionForm'
 import type { ContentStatus } from '@/lib/enums'
 
 async function requireAdmin() {
-  const session = await getSession()
-  if (!session) redirect('/admin/login')
-  return session
+  return requireAdminForPath('/admin/bai-viet')
 }
 
 function readForm(formData: FormData) {
@@ -27,7 +26,7 @@ function readForm(formData: FormData) {
     slug,
     categoryId: formData.get('categoryId') ? Number(formData.get('categoryId')) : null,
     excerpt: String(formData.get('excerpt') || '') || null,
-    contentHtml: String(formData.get('contentHtml') || '') || null,
+    contentHtml: sanitizeRichText(String(formData.get('contentHtml') || '')) || null,
     author: String(formData.get('author') || '') || null,
     videoUrl: String(formData.get('videoUrl') || '') || null,
     publishedAt: publishedAtStr ? new Date(publishedAtStr) : undefined,
