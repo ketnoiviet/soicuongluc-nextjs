@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { getImageUrl, stripHtml } from '@/lib/utils'
 import type { Metadata } from 'next'
 
-interface Props { params: { slug: string } }
+interface Props { params: Promise<{ slug: string }> }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const product = await prisma.product.findFirst({ where: { slug: params.slug } })
   if (!product) return { title: 'Sản phẩm không tồn tại' }
   // Ưu tiên Meta Title/Meta Description nhập ở box "Kiểm tra SEO" (admin) - fallback về tên/mô tả
@@ -19,7 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductDetailPage({ params }: Props) {
+export default async function ProductDetailPage(props: Props) {
+  const params = await props.params;
   const product = await prisma.product.findFirst({
     where: { slug: params.slug, status: 'PUBLISHED' },
     include: { category: true, images: { orderBy: { sortOrder: 'asc' } }, dimensions: { orderBy: { sortOrder: 'asc' } } },

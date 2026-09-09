@@ -127,3 +127,13 @@ Long free-text fields that hold HTML (`shortDescription`, `descriptionHtml`, `sp
 ### Dynamic redirects (per-product 301)
 
 For URLs that change at runtime (an admin edits a product's slug after it's already been indexed), there's a separate DB-backed mechanism: the `ProductRedirect` model maps an `oldSlug` to a `productId`. The "Kiểm tra SEO" box on the product edit form ([ProductSeoBox.tsx](app/admin/(dashboard)/san-pham/ProductSeoBox.tsx)) has a "Tạo chuyển hướng 301..." checkbox; `updateSanPhamAction` upserts a `ProductRedirect` row when it's checked and the slug actually changed. The public product page ([app/(site)/san-pham/chi-tiet/[slug]/page.tsx](app/(site)/san-pham/chi-tiet/[slug]/page.tsx)) falls back to a `ProductRedirect` lookup before returning 404, and calls `permanentRedirect()` (Next's 308, SEO-equivalent to a real 301) to the product's *current* slug — checking the target's `status === 'PUBLISHED'` first, so a since-hidden/archived product doesn't 301 straight into another 404. If another entity needs the same "slug can change, don't break old links" behavior, copy this pattern rather than adding more static rules to `next.config.js`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

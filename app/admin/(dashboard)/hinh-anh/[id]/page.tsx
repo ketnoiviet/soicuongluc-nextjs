@@ -5,7 +5,8 @@ import AlbumForm from '../Form'
 import { updateAlbumAction } from '../actions'
 import AlbumPhotos from './AlbumPhotos'
 
-export default async function EditAlbumPage({ params }: { params: { id: string } }) {
+export default async function EditAlbumPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const [item, photos] = await Promise.all([
     prisma.galleryAlbum.findUnique({ where: { id } }),

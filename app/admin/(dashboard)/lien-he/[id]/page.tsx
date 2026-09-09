@@ -9,7 +9,8 @@ import StatusToggle from '../StatusToggle'
 import { deleteLienHeAction, setLienHeStatusAction } from '../actions'
 import type { ContactStatus } from '@/lib/enums'
 
-export default async function LienHeDetailPage({ params }: { params: { id: string } }) {
+export default async function LienHeDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.contactSubmission.findUnique({ where: { id } })
   if (!item) notFound()

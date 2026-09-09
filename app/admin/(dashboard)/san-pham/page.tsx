@@ -6,11 +6,12 @@ import ImportExcelForm from './ImportExcelForm'
 
 export const dynamic = 'force-dynamic'
 
-export default async function SanPhamListPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; loai?: string; trangthai?: string; nsx?: string }
-}) {
+export default async function SanPhamListPage(
+  props: {
+    searchParams: Promise<{ q?: string; loai?: string; trangthai?: string; nsx?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const q = searchParams.q?.trim() || ''
   const categoryId = searchParams.loai ? Number(searchParams.loai) : undefined
   const status = searchParams.trangthai || undefined

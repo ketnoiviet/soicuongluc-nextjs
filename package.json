@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "node prisma/seed.js",
@@ -32,12 +32,12 @@
     "exceljs": "^4.4.0",
     "jose": "^5.9.6",
     "lucide-react": "^1.42.0",
-    "next": "^14.2.0",
-    "next-themes": "^0.4.6",
+    "next": "16.3.4",
+    "next-themes": "^1.0.0-beta.0",
     "nodemailer": "^6.9.13",
     "prisma": "^5.14.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-slick": "^0.30.2",
     "sanitize-html": "^2.17.7",
     "server-only": "^0.0.1",
@@ -51,10 +51,12 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.14.0",
     "@types/nodemailer": "^6.4.15",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
     "@types/sanitize-html": "^2.16.1",
     "autoprefixer": "^10.4.19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.4",
     "postcss": "^8.4.38",
     "shadcn": "^4.21.0",
     "tailwindcss": "^3.4.4",
@@ -63,5 +65,9 @@
   },
   "prisma": {
     "seed": "node prisma/seed.js"
+  },
+  "overrides": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7"
   }
 }

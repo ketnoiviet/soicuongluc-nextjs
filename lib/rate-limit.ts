@@ -35,8 +35,8 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): { 
 // Đọc IP client từ header do reverse proxy gắn (x-forwarded-for/x-real-ip) - Next.js không lộ
 // IP kết nối TCP thật trực tiếp cho Server Action. Nếu không có header nào (vd chạy local
 // không qua proxy) thì gộp chung 1 khoá "unknown" - vẫn còn tốt hơn không giới hạn gì.
-export function getClientIp(requestHeaders?: Headers): string {
-  const h = requestHeaders ?? headers()
+export async function getClientIp(requestHeaders?: Headers): Promise<string> {
+  const h = requestHeaders ?? (await headers())
   const forwardedFor = h.get('x-forwarded-for')
   if (forwardedFor) return forwardedFor.split(',')[0].trim()
   return h.get('x-real-ip') || 'unknown'

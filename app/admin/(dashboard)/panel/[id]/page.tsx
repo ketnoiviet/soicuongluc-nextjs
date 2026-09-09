@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import PanelForm from '../Form'
 import { updatePanelAction } from '../actions'
 
-export default async function EditPanelPage({ params }: { params: { id: string } }) {
+export default async function EditPanelPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.adPanel.findUnique({ where: { id } })
   if (!item) notFound()

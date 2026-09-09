@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // App Router không cho layout Server Component biết URL đang render bằng cách nào
   // khác ngoài đọc lại header do middleware.ts gắn vào (xem middleware.ts).
-  const pathname = headers().get('x-pathname') || '/admin'
+  const pathname = (await headers()).get('x-pathname') || '/admin'
   if (!isPathAllowed(pathname, role, allowedHrefs)) {
     redirect('/admin')
   }

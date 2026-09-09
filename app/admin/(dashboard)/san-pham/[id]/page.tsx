@@ -6,7 +6,8 @@ import { updateSanPhamAction, deleteProductRedirectAction } from '../actions'
 import ProductGallery from './ProductGallery'
 import ProductDimensions from './ProductDimensions'
 
-export default async function EditSanPhamPage({ params }: { params: { id: string } }) {
+export default async function EditSanPhamPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const [item, categories, suppliers, images, dimensions, redirects] = await Promise.all([
     prisma.product.findUnique({ where: { id } }),

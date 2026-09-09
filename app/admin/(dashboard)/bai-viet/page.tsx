@@ -11,7 +11,8 @@ import { deleteBaiVietAction } from './actions'
 
 export const dynamic = 'force-dynamic'
 
-export default async function BaiVietListPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function BaiVietListPage(props: { searchParams: Promise<{ q?: string }> }) {
+  const searchParams = await props.searchParams;
   const q = searchParams.q?.trim() || ''
 
   const items = await prisma.newsArticle.findMany({

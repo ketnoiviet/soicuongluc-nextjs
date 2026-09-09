@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import VideoForm from '../Form'
 import { updateVideoAction } from '../actions'
 
-export default async function EditVideoPage({ params }: { params: { id: string } }) {
+export default async function EditVideoPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.video.findUnique({ where: { id } })
   if (!item) notFound()

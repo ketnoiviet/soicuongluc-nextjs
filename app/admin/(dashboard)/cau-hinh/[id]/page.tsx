@@ -11,7 +11,8 @@ const inputCls =
 const labelCls = 'mb-1 block text-sm font-medium text-admin-text-2'
 const cardTitleCls = 'mb-4 font-bold text-admin-text'
 
-export default async function EditCauHinhPage({ params }: { params: { id: string } }) {
+export default async function EditCauHinhPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.siteSetting.findUnique({ where: { id } })
   if (!item) notFound()

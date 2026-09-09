@@ -19,7 +19,8 @@ const tabCls = (active: boolean) =>
       : 'border-admin-border/20 text-admin-text-2 hover:border-admin-primary/40 hover:text-admin-primary'
   )
 
-export default async function LienHeListPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function LienHeListPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const statusFilter = searchParams.status
 
   const items = await prisma.contactSubmission.findMany({

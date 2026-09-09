@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import VisaoForm from '../Form'
 import { updateVisaoAction } from '../actions'
 
-export default async function EditVisaoPage({ params }: { params: { id: string } }) {
+export default async function EditVisaoPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.whyChooseUsItem.findUnique({ where: { id } })
   if (!item) notFound()

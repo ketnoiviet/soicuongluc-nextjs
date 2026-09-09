@@ -8,7 +8,8 @@ import { PRODUCT_GALLERY_MAX_FILES as MAX_FILES } from '@/lib/constants'
 // Upload hàng loạt ảnh cho "Thư viện ảnh sản phẩm" (tối đa 30 ảnh/lần, tự resize + chuyển WebP
 // qua saveProductGalleryImage, lưu phẳng vào uploads/imgproducts theo tên slug sản phẩm).
 // Dùng route riêng (không phải Server Action) để client theo dõi được % tiến trình upload qua XHR.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await checkAdminPathAccess('/admin/san-pham')
   if (!access.ok) return NextResponse.json({ error: 'Không có quyền truy cập.' }, { status: access.reason === 'unauthenticated' ? 401 : 403 })
 

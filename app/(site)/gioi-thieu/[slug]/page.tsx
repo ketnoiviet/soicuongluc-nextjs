@@ -5,15 +5,17 @@ import Link from 'next/link'
 import { getImageUrl } from '@/lib/utils'
 import type { Metadata } from 'next'
 
-interface Props { params: { slug: string } }
+interface Props { params: Promise<{ slug: string }> }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const article = await prisma.aboutArticle.findFirst({ where: { slug: params.slug } })
   if (!article) return { title: 'Bài viết không tồn tại' }
   return { title: `${article.title} | HARIFA` }
 }
 
-export default async function GioiThieuDetailPage({ params }: Props) {
+export default async function GioiThieuDetailPage(props: Props) {
+  const params = await props.params;
   const [article, others] = await Promise.all([
     prisma.aboutArticle.findFirst({ where: { slug: params.slug, status: 'PUBLISHED' } }),
     prisma.aboutArticle.findMany({ where: { status: 'PUBLISHED' }, orderBy: { sortOrder: 'asc' } }),

@@ -17,7 +17,8 @@ const inputCls =
 const labelCls = 'mb-1 block text-sm font-medium text-admin-text-2'
 const cardTitleCls = 'mb-4 font-bold text-admin-text'
 
-export default async function EditNguoiDungPage({ params }: { params: { id: string } }) {
+export default async function EditNguoiDungPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const viewer = await getCurrentAdminUser()
   if (!viewer) redirect('/admin/login')

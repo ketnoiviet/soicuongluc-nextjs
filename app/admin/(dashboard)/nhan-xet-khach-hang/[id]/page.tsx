@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import NhanXetForm from '../Form'
 import { updateNhanXetAction } from '../actions'
 
-export default async function EditNhanXetPage({ params }: { params: { id: string } }) {
+export default async function EditNhanXetPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.testimonial.findUnique({ where: { id } })
   if (!item) notFound()

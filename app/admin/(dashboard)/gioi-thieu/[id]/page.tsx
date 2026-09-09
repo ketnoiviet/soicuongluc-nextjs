@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import GioiThieuForm from '../Form'
 import { updateGioiThieuAction } from '../actions'
 
-export default async function EditGioiThieuPage({ params }: { params: { id: string } }) {
+export default async function EditGioiThieuPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.aboutArticle.findUnique({ where: { id } })
   if (!item) notFound()

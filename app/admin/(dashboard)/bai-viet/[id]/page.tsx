@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import BaiVietForm from '../Form'
 import { updateBaiVietAction } from '../actions'
 
-export default async function EditBaiVietPage({ params }: { params: { id: string } }) {
+export default async function EditBaiVietPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const [item, categories] = await Promise.all([
     prisma.newsArticle.findUnique({ where: { id } }),

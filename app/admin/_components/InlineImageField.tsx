@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import Image from 'next/image'
 import type { ActionState } from './ActionForm'
 import SubmitButton from './SubmitButton'
@@ -25,7 +25,7 @@ export default function InlineImageField({
   hint?: string
   previewSize?: number
 }) {
-  const [state, formAction] = useFormState<ActionState, FormData>(action, { error: null })
+  const [state, formAction] = useActionState<ActionState, FormData>(action, { error: null })
 
   return (
     <form action={formAction} className="space-y-2">

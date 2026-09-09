@@ -660,10 +660,10 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  // Random width between 50 to 90%. Dùng lazy initializer của useState (chỉ chạy đúng 1 lần
+  // lúc mount) thay vì useMemo - React coi hàm truyền cho useMemo phải là pure (không được gọi
+  // Math.random), còn lazy initializer của useState thì được phép sinh giá trị khởi tạo 1 lần.
+  const [width] = React.useState(() => `${Math.floor(Math.random() * 40) + 50}%`)
 
   return (
     <div

@@ -28,7 +28,8 @@ export async function createSession(user: { id: number; email: string; fullName:
     fullName: user.fullName,
     role: user.role as AdminRole,
   })
-  cookies().set(SESSION_COOKIE, token, {
+  const cookieStore = await cookies()
+  cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -38,13 +39,14 @@ export async function createSession(user: { id: number; email: string; fullName:
 }
 
 // Xóa cookie phiên đăng nhập
-export function destroySession() {
-  cookies().delete(SESSION_COOKIE)
+export async function destroySession() {
+  const cookieStore = await cookies()
+  cookieStore.delete(SESSION_COOKIE)
 }
 
 // Đọc phiên đăng nhập hiện tại (dùng trong Server Component / Server Action)
 export async function getSession(): Promise<SessionPayload | null> {
-  const token = cookies().get(SESSION_COOKIE)?.value
+  const token = (await cookies()).get(SESSION_COOKIE)?.value
   return decryptSession(token)
 }
 
@@ -79,9 +81,10 @@ export async function checkAdminPathAccess(
 
   const allowedHrefs = parsePermissions(user.permissions)
   if (!isPathAllowed(pathname, user.role as AdminRole, allowedHrefs)) {
-    // Không await ở đây để không làm chậm phản hồi cho case bị từ chối (không có gì phải chờ
-    // ghi log xong) - logSecurityEvent tự nuốt lỗi (best-effort), không cần .catch thêm.
-    void logSecurityEvent('PERMISSION_DENIED', `user=${user.email} path=${pathname}`, getClientIp())
+    // Không await logSecurityEvent ở đây để không làm chậm phản hồi cho case bị từ chối (không
+    // có gì phải chờ ghi log xong) - bản thân nó tự nuốt lỗi (best-effort), không cần .catch thêm.
+    const ip = await getClientIp()
+    void logSecurityEvent('PERMISSION_DENIED', `user=${user.email} path=${pathname}`, ip)
     return { ok: false, reason: 'forbidden' }
   }
   return { ok: true, user }

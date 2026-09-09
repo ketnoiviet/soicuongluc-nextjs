@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import NhaSanXuatForm from '../Form'
 import { updateNhaSanXuatAction } from '../actions'
 
-export default async function EditNhaSanXuatPage({ params }: { params: { id: string } }) {
+export default async function EditNhaSanXuatPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.supplier.findUnique({ where: { id } })
   if (!item) notFound()

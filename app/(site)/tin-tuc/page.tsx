@@ -8,11 +8,12 @@ export const metadata: Metadata = {
   description: 'Cập nhật tin tức mới nhất về ngành sợi cường lực, polyester, nylon, carbon từ HARIFA',
 }
 
-export default async function TinTucPage({
-  searchParams,
-}: {
-  searchParams: { page?: string }
-}) {
+export default async function TinTucPage(
+  props: {
+    searchParams: Promise<{ page?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
   const page = Math.max(1, parseInt(searchParams.page || '1'))
   const pageSize = 9
 

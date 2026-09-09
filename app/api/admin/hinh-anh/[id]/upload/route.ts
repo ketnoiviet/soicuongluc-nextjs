@@ -8,7 +8,8 @@ import { GALLERY_ALBUM_MAX_FILES as MAX_FILES } from '@/lib/constants'
 // Upload hàng loạt ảnh cho 1 album (tối đa 30 ảnh/lần), cùng cơ chế với gallery-upload của
 // Sản phẩm: route riêng (không phải Server Action) để client theo dõi % tiến trình qua XHR,
 // xử lý song song qua Promise.allSettled và trả lỗi riêng cho từng ảnh thay vì fail cả batch.
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const access = await checkAdminPathAccess('/admin/hinh-anh')
   if (!access.ok) return NextResponse.json({ error: 'Không có quyền truy cập.' }, { status: access.reason === 'unauthenticated' ? 401 : 403 })
 

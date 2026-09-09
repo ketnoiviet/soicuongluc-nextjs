@@ -6,10 +6,11 @@ import type { Metadata } from 'next'
 import type { ProductCategory } from '@prisma/client'
 
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const cat = await prisma.productCategory.findFirst({ where: { slug: params.slug } })
   if (!cat) return { title: 'Sản phẩm không tồn tại' }
   return {
@@ -23,7 +24,8 @@ export async function generateStaticParams() {
   return cats.filter((c) => c.slug).map((c) => ({ slug: c.slug! }))
 }
 
-export default async function SanPhamCategoryPage({ params }: Props) {
+export default async function SanPhamCategoryPage(props: Props) {
+  const params = await props.params;
   const [category, allCategories] = await Promise.all([
     prisma.productCategory.findFirst({ where: { slug: params.slug, status: 'PUBLISHED' } }),
     prisma.productCategory.findMany({ where: { status: 'PUBLISHED' }, orderBy: { sortOrder: 'asc' } }),

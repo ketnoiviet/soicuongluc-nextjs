@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     // Chặn spam/mail-bombing từ 1 nguồn: tối đa 5 lần gửi / giờ / IP - đủ cho nhu cầu liên hệ
     // thật (kể cả gửi lại do gõ nhầm) nhưng chặn được script tự động dội liên tục.
-    const ip = getClientIp(request.headers)
+    const ip = await getClientIp(request.headers)
     const limit = checkRateLimit(`contact:ip:${ip}`, 5, 60 * 60 * 1000)
     if (!limit.ok) {
       return NextResponse.json({ error: 'Bạn đã gửi liên hệ quá nhiều lần. Vui lòng thử lại sau.' }, { status: 429 })

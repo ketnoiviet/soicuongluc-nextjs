@@ -53,7 +53,7 @@ export default async function NewNguoiDungPage() {
                 ))}
               </AdminSelect>
               <p className="mt-1 text-xs text-admin-text-3">
-                Sau khi tạo, vào "Sửa" trên danh sách để chọn các trang quản trị tài khoản này được phép truy cập.
+                Sau khi tạo, vào &quot;Sửa&quot; trên danh sách để chọn các trang quản trị tài khoản này được phép truy cập.
               </p>
             </div>
             <SubmitButton>Tạo tài khoản</SubmitButton>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 
 export type ActionState = { error?: string | null; success?: string | null }
 
@@ -13,7 +13,7 @@ export default function ActionForm({
   children: React.ReactNode
   className?: string
 }) {
-  const [state, formAction] = useFormState<ActionState, FormData>(action, { error: null })
+  const [state, formAction] = useActionState<ActionState, FormData>(action, { error: null })
 
   return (
     <form action={formAction} className={className}>

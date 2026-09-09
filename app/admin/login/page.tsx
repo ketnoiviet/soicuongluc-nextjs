@@ -4,7 +4,8 @@ import { loginAction } from './actions'
 
 export const metadata = { title: 'Đăng nhập quản trị | HARIFA' }
 
-export default function AdminLoginPage({ searchParams }: { searchParams: { redirect?: string } }) {
+export default async function AdminLoginPage(props: { searchParams: Promise<{ redirect?: string }> }) {
+  const searchParams = await props.searchParams;
   return (
     <div className="min-h-screen bg-[#0f1620] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">

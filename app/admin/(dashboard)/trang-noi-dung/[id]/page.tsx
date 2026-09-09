@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import TrangNoiDungForm from '../Form'
 import { updateTrangNoiDungAction } from '../actions'
 
-export default async function EditTrangNoiDungPage({ params }: { params: { id: string } }) {
+export default async function EditTrangNoiDungPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.contentPage.findUnique({ where: { id } })
   if (!item) notFound()

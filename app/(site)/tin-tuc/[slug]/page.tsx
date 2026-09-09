@@ -6,9 +6,10 @@ import { getImageUrl, formatDate } from '@/lib/utils'
 import { NewsCard } from '@/components/ui/Cards'
 import type { Metadata } from 'next'
 
-interface Props { params: { slug: string } }
+interface Props { params: Promise<{ slug: string }> }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const article = await prisma.newsArticle.findFirst({ where: { slug: params.slug } })
   if (!article) return { title: 'Bài viết không tồn tại' }
   return {
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function TinTucDetailPage({ params }: Props) {
+export default async function TinTucDetailPage(props: Props) {
+  const params = await props.params;
   const article = await prisma.newsArticle.findFirst({
     where: { slug: params.slug, status: 'PUBLISHED' },
     include: { category: true },

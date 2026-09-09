@@ -21,7 +21,7 @@ export async function loginAction(_prevState: ActionState, formData: FormData): 
 
   // Giới hạn theo cả IP (chặn 1 nguồn dò nhiều tài khoản) lẫn theo email (chặn nhiều nguồn
   // cùng dò 1 tài khoản) - brute-force/credential-stuffing cần vượt qua cả 2 mới thử tiếp được.
-  const ip = getClientIp()
+  const ip = await getClientIp()
   const ipLimit = checkRateLimit(`login:ip:${ip}`, 20, LOGIN_WINDOW_MS)
   const emailLimit = checkRateLimit(`login:email:${email.toLowerCase()}`, 5, LOGIN_WINDOW_MS)
   if (!ipLimit.ok || !emailLimit.ok) {

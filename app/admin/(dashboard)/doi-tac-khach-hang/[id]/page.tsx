@@ -4,7 +4,8 @@ import PageHeader from '@/app/admin/_components/PageHeader'
 import DoiTacForm from '../Form'
 import { updateDoiTacAction } from '../actions'
 
-export default async function EditDoiTacPage({ params }: { params: { id: string } }) {
+export default async function EditDoiTacPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id)
   const item = await prisma.partner.findUnique({ where: { id } })
   if (!item) notFound()
