@@ -4,11 +4,13 @@ import { ProductCard, NewsCard } from '@/components/ui/Cards'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getImageUrl } from '@/lib/utils'
+import { SITE_NAME } from '@/lib/site-name'
+import { getCompanyInfo } from '@/lib/company-info'
 import type { ProductCategory, Product, NewsArticle } from '@prisma/client'
 
 export default async function HomePage() {
   // Fetch dữ liệu song song
-  const [banners, categories, featuredProducts, latestNews] = await Promise.all([
+  const [banners, categories, featuredProducts, latestNews, companyInfo] = await Promise.all([
     prisma.bannerSlide.findMany({ orderBy: { sortOrder: 'asc' } }),
     prisma.productCategory.findMany({
       where: { status: 'PUBLISHED' },
@@ -24,6 +26,7 @@ export default async function HomePage() {
       orderBy: { publishedAt: 'desc' },
       take: 6,
     }),
+    getCompanyInfo(),
   ])
 
   return (
@@ -36,7 +39,7 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-title">
             <h2>Danh mục sản phẩm</h2>
-            <p>Nhà phân phối sợi cường lực chính hãng Hyosung, Kolon, Toray tại Việt Nam</p>
+            <p>Đầy đủ các dòng sản phẩm sợi cường lực cho nhu cầu sản xuất công nghiệp</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
             {categories.map((cat: ProductCategory) => (
@@ -92,16 +95,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* LÝ DO CHỌN HARIFA */}
+      {/* LÝ DO CHỌN CHÚNG TÔI */}
       <section className="page-section bg-light">
         <div className="container">
           <div className="section-title">
-            <h2>Tại sao chọn HARIFA?</h2>
+            <h2>Tại sao chọn {SITE_NAME}?</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
             {[
-              { icon: '🏆', title: 'Chính hãng 100%', desc: 'Đại lý phân phối ủy quyền từ Hyosung, Kolon, Toray – các thương hiệu hàng đầu thế giới' },
-              { icon: '🚚', title: 'Giao hàng toàn quốc', desc: 'Kho hàng tại TP.HCM, Hà Nội, Đà Nẵng – giao hàng nhanh trên toàn quốc' },
+              { icon: '🏆', title: 'Chính hãng 100%', desc: 'Nhập khẩu và phân phối trực tiếp từ các thương hiệu sợi cường lực hàng đầu thế giới' },
+              {
+                icon: '🚚', title: 'Giao hàng toàn quốc',
+                desc: [companyInfo.addressHcm && 'TP.HCM', companyInfo.addressHn && 'Hà Nội', companyInfo.addressDn && 'Đà Nẵng'].filter(Boolean).length > 0
+                  ? `Kho hàng tại ${[companyInfo.addressHcm && 'TP.HCM', companyInfo.addressHn && 'Hà Nội', companyInfo.addressDn && 'Đà Nẵng'].filter(Boolean).join(', ')} – giao hàng nhanh trên toàn quốc`
+                  : 'Giao hàng nhanh trên toàn quốc',
+              },
               { icon: '💬', title: 'Tư vấn chuyên sâu', desc: 'Đội ngũ kỹ thuật giàu kinh nghiệm, hỗ trợ chọn đúng loại sợi cho từng ứng dụng' },
               { icon: '✅', title: 'Cam kết chất lượng', desc: 'Sản phẩm có chứng nhận chất lượng quốc tế, bảo hành rõ ràng, đổi trả minh bạch' },
             ].map((item, i) => (
@@ -165,12 +173,14 @@ export default async function HomePage() {
             Cần tư vấn hoặc báo giá?
           </h2>
           <p style={{ color: 'var(--text-gray)', marginBottom: 24 }}>
-            Liên hệ ngay với HARIFA để được tư vấn miễn phí và nhận báo giá tốt nhất
+            Liên hệ ngay để được tư vấn miễn phí và nhận báo giá tốt nhất
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="tel:0916666779" className="btn-detail" style={{ fontSize: 14, padding: '12px 28px', background: 'var(--accent)' }}>
-              📞 Gọi ngay: 0916 666 779
-            </a>
+            {companyInfo.phone && (
+              <a href={`tel:${companyInfo.phone}`} className="btn-detail" style={{ fontSize: 14, padding: '12px 28px', background: 'var(--accent)' }}>
+                📞 Gọi ngay: {companyInfo.phone}
+              </a>
+            )}
             <Link href="/dat-hang" className="btn-detail" style={{ fontSize: 14, padding: '12px 28px' }}>
               📋 Gửi yêu cầu báo giá
             </Link>

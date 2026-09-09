@@ -54,8 +54,14 @@ export default function AppSidebar({ role, allowedHrefs }: { role: AdminRole; al
               <Waves className="size-[18px]" />
             </div>
             <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-[15px] font-extrabold text-admin-text">HARIFA</span>
-              <span className="truncate text-[11px] text-admin-text-3">soicuongluc.com</span>
+              <span className="truncate text-[15px] font-extrabold text-admin-text">
+                {process.env.NEXT_PUBLIC_SITE_NAME || 'Quản trị'}
+              </span>
+              {process.env.NEXT_PUBLIC_SITE_URL && (
+                <span className="truncate text-[11px] text-admin-text-3">
+                  {process.env.NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, '')}
+                </span>
+              )}
             </div>
           </Link>
           <div className="group-data-[collapsible=icon]:hidden">

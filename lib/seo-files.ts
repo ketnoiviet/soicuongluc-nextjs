@@ -12,19 +12,22 @@ import path from 'path'
 // khả năng sửa tay), sitemap.xml vẫn dùng app/sitemap.ts (MetadataRoute.Sitemap) như cũ.
 const ROBOTS_PATH = path.join(process.cwd(), 'public', 'robots.txt')
 
-const DEFAULT_ROBOTS_TXT = `User-agent: *
+function defaultRobotsTxt(): string {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: https://soicuongluc.com/sitemap.xml
+Sitemap: ${baseUrl}/sitemap.xml
 `
+}
 
 export async function readRobotsTxt(): Promise<string> {
   try {
     return await readFile(ROBOTS_PATH, 'utf-8')
   } catch {
-    return DEFAULT_ROBOTS_TXT
+    return defaultRobotsTxt()
   }
 }
 

@@ -2,7 +2,9 @@ import ActionForm from '@/app/admin/_components/ActionForm'
 import SubmitButton from '@/app/admin/_components/SubmitButton'
 import { loginAction } from './actions'
 
-export const metadata = { title: 'Đăng nhập quản trị | HARIFA' }
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Quản trị'
+
+export const metadata = { title: `Đăng nhập quản trị | ${siteName}` }
 
 export default async function AdminLoginPage(props: { searchParams: Promise<{ redirect?: string }> }) {
   const searchParams = await props.searchParams;
@@ -14,7 +16,7 @@ export default async function AdminLoginPage(props: { searchParams: Promise<{ re
             🧵
           </div>
           <h1 className="text-lg font-bold text-slate-800">Đăng nhập quản trị</h1>
-          <p className="text-sm text-slate-500 mt-1">soicuongluc.com - HARIFA</p>
+          <p className="text-sm text-slate-500 mt-1">{siteName}</p>
         </div>
 
         <ActionForm action={loginAction}>
@@ -26,7 +28,7 @@ export default async function AdminLoginPage(props: { searchParams: Promise<{ re
               name="email"
               required
               autoFocus
-              placeholder="admin@harifavn.com"
+              placeholder="admin@example.com"
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
           </div>

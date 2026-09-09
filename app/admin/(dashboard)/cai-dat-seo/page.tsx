@@ -20,6 +20,7 @@ const cardDescCls = 'mb-4 text-xs text-admin-text-3'
 
 export default async function CaiDatSeoPage() {
   const [seo, robotsTxt] = await Promise.all([getSeoSettings(), readRobotsTxt()])
+  const exampleUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-domain.com'
 
   const field = (name: Parameters<typeof saveSeoFieldAction>[0]) => saveSeoFieldAction.bind(null, name)
 
@@ -45,7 +46,7 @@ export default async function CaiDatSeoPage() {
             <InlineSaveField
               label="Canonical URL"
               defaultValue={seo?.canonicalUrl}
-              placeholder="https://soicuongluc.com/"
+              placeholder={`${exampleUrl}/`}
               action={field('canonicalUrl')}
               hint='Xuất ra <link rel="canonical" href="...">'
             />
@@ -74,7 +75,7 @@ export default async function CaiDatSeoPage() {
             <InlineSaveField
               label="og:image"
               defaultValue={seo?.ogImage}
-              placeholder="https://soicuongluc.com/images/og-share.jpg"
+              placeholder={`${exampleUrl}/images/og-share.jpg`}
               action={field('ogImage')}
             />
             <hr className="border-admin-border/12" />
@@ -93,7 +94,7 @@ export default async function CaiDatSeoPage() {
             <InlineSaveField
               label="twitter:image"
               defaultValue={seo?.twitterImage}
-              placeholder="https://soicuongluc.com/images/og-share.jpg"
+              placeholder={`${exampleUrl}/images/og-share.jpg`}
               action={field('twitterImage')}
             />
           </div>

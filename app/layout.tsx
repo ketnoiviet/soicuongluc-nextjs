@@ -9,10 +9,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const description = seo?.metaDescription || SEO_DEFAULTS.metaDescription
 
   return {
-    metadataBase: new URL('https://soicuongluc.com'),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
     title,
     description,
-    keywords: 'sợi cường lực, sợi polyester, sợi nylon, sợi carbon, harifa, soicuongluc',
     alternates: seo?.canonicalUrl ? { canonical: seo.canonicalUrl } : undefined,
     robots: seo?.robotsMeta || 'index, follow',
     icons: {
@@ -25,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: seo?.ogTitle || title,
       description: seo?.ogDescription || description,
       images: seo?.ogImage ? [seo.ogImage] : undefined,
-      siteName: 'soicuongluc.com',
+      siteName: process.env.NEXT_PUBLIC_SITE_NAME || undefined,
       locale: 'vi_VN',
     },
     twitter: {

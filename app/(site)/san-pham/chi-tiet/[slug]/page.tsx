@@ -3,6 +3,8 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getImageUrl, stripHtml } from '@/lib/utils'
+import { SITE_NAME } from '@/lib/site-name'
+import { getCompanyInfo } from '@/lib/company-info'
 import type { Metadata } from 'next'
 
 interface Props { params: Promise<{ slug: string }> }
@@ -15,8 +17,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   // ngắn khi chưa điền. shortDescription giờ là HTML (TinyMCE) nên phải stripHtml trước khi
   // đưa vào meta description, tránh lộ nguyên thẻ <p> trong kết quả tìm kiếm.
   return {
-    title: product.metaTitle || `${product.name} | HARIFA - soicuongluc.com`,
-    description: product.metaDescription || stripHtml(product.shortDescription || '').slice(0, 160) || `${product.name} - Sợi cường lực chính hãng tại HARIFA`,
+    title: product.metaTitle || `${product.name} | ${SITE_NAME}`,
+    description: product.metaDescription || stripHtml(product.shortDescription || '').slice(0, 160) || product.name,
   }
 }
 
@@ -37,10 +39,13 @@ export default async function ProductDetailPage(props: Props) {
   }
 
   // Sản phẩm liên quan cùng danh mục
-  const related = await prisma.product.findMany({
-    where: { categoryId: product.categoryId, status: 'PUBLISHED', id: { not: product.id } },
-    take: 4, orderBy: { sortOrder: 'asc' },
-  })
+  const [related, companyInfo] = await Promise.all([
+    prisma.product.findMany({
+      where: { categoryId: product.categoryId, status: 'PUBLISHED', id: { not: product.id } },
+      take: 4, orderBy: { sortOrder: 'asc' },
+    }),
+    getCompanyInfo(),
+  ])
 
   return (
     <>
@@ -114,16 +119,20 @@ export default async function ProductDetailPage(props: Props) {
 
               {/* Nút hành động */}
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
-                <a href="tel:0916666779" className="btn-detail" style={{ background: 'var(--accent)', fontSize: 14, padding: '12px 22px' }}>
-                  📞 Gọi báo giá ngay
-                </a>
+                {companyInfo.phone && (
+                  <a href={`tel:${companyInfo.phone}`} className="btn-detail" style={{ background: 'var(--accent)', fontSize: 14, padding: '12px 22px' }}>
+                    📞 Gọi báo giá ngay
+                  </a>
+                )}
                 <Link href="/dat-hang" className="btn-detail" style={{ fontSize: 14, padding: '12px 22px' }}>
                   📋 Gửi yêu cầu báo giá
                 </Link>
-                <a href={`https://zalo.me/0916666779`} target="_blank" rel="noopener" className="btn-detail"
-                  style={{ background: '#0068ff', fontSize: 14, padding: '12px 22px' }}>
-                  🔵 Chat Zalo
-                </a>
+                {companyInfo.zalo && (
+                  <a href={`https://zalo.me/${companyInfo.zalo}`} target="_blank" rel="noopener" className="btn-detail"
+                    style={{ background: '#0068ff', fontSize: 14, padding: '12px 22px' }}>
+                    🔵 Chat Zalo
+                  </a>
+                )}
               </div>
             </div>
           </div>

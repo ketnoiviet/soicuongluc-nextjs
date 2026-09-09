@@ -2,20 +2,20 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
+import type { CompanyInfo } from '@/lib/company-info'
 
-const sanPhamMenu = [
-  { href: '/san-pham/soi-polyester-cuong-luc', label: 'Sợi polyester cường lực' },
-  { href: '/san-pham/soi-nylon-cuong-luc', label: 'Sợi nylon cường lực' },
-  { href: '/san-pham/soi-carbon', label: 'Sợi carbon' },
-  { href: '/san-pham/lop-xe-vat-lieu-gia-co-cong-nghiep-pu', label: 'Lốp xe & vật liệu gia cố PU' },
-]
+type Category = { name: string; slug: string }
 
 export default function Header({
   introArticles = [],
   logoUrl,
+  companyInfo,
+  categories = [],
 }: {
   introArticles?: { title: string; slug: string }[]
   logoUrl?: string | null
+  companyInfo: CompanyInfo
+  categories?: Category[]
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [spOpen, setSpOpen] = useState(false)
@@ -26,12 +26,20 @@ export default function Header({
       <div className="topbar">
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span>📞 <a href="tel:0916666779">0916 666 779</a></span>
-            <span>✉️ <a href="mailto:sales@harifavn.com">sales@harifavn.com</a></span>
+            {companyInfo.phone && (
+              <span>📞 <a href={`tel:${companyInfo.phone}`}>{companyInfo.phone}</a></span>
+            )}
+            {companyInfo.email && (
+              <span>✉️ <a href={`mailto:${companyInfo.email}`}>{companyInfo.email}</a></span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <a href="https://www.facebook.com/thegioisoidet" target="_blank" rel="noopener" aria-label="Facebook">Facebook</a>
-            <a href="https://zalo.me/0916666779" target="_blank" rel="noopener" aria-label="Zalo">Zalo</a>
+            {companyInfo.facebook && (
+              <a href={companyInfo.facebook} target="_blank" rel="noopener" aria-label="Facebook">Facebook</a>
+            )}
+            {companyInfo.zalo && (
+              <a href={`https://zalo.me/${companyInfo.zalo}`} target="_blank" rel="noopener" aria-label="Zalo">Zalo</a>
+            )}
           </div>
         </div>
       </div>
@@ -44,7 +52,7 @@ export default function Header({
             <Link href="/" className="logo">
               <Image
                 src={logoUrl || '/uploads/hinhanh/Untitled_1.png'}
-                alt="HARIFA - Sợi cường lực"
+                alt={companyInfo.companyName || 'Logo'}
                 width={200}
                 height={56}
                 style={{ height: 56, width: 'auto', objectFit: 'contain' }}
@@ -76,20 +84,22 @@ export default function Header({
                   </div>
                 )}
               </div>
-              <div className="nav-item">
-                <span className="nav-link" style={{ cursor: 'pointer' }}
-                  onClick={() => setSpOpen(!spOpen)}>
-                  Sợi cường lực ▾
-                </span>
-                <div className="dropdown">
-                  {sanPhamMenu.map(item => (
-                    <Link key={item.href} href={item.href} className="dropdown-link"
-                      onClick={() => setMenuOpen(false)}>
-                      {item.label}
-                    </Link>
-                  ))}
+              {categories.length > 0 && (
+                <div className="nav-item">
+                  <span className="nav-link" style={{ cursor: 'pointer' }}
+                    onClick={() => setSpOpen(!spOpen)}>
+                    Sản phẩm ▾
+                  </span>
+                  <div className="dropdown">
+                    {categories.map((item) => (
+                      <Link key={item.slug} href={`/san-pham/${item.slug}`} className="dropdown-link"
+                        onClick={() => setMenuOpen(false)}>
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="nav-item">
                 <Link href="/tin-tuc" className="nav-link">Tin tức</Link>
               </div>

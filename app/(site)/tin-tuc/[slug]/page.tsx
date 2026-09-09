@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getImageUrl, formatDate } from '@/lib/utils'
 import { NewsCard } from '@/components/ui/Cards'
+import { SITE_NAME } from '@/lib/site-name'
+import { getCompanyInfo } from '@/lib/company-info'
 import type { Metadata } from 'next'
 
 interface Props { params: Promise<{ slug: string }> }
@@ -13,7 +15,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const article = await prisma.newsArticle.findFirst({ where: { slug: params.slug } })
   if (!article) return { title: 'Bài viết không tồn tại' }
   return {
-    title: `${article.title} | HARIFA`,
+    title: `${article.title} | ${SITE_NAME}`,
     description: article.excerpt?.substring(0, 160) || '',
   }
 }
@@ -29,10 +31,13 @@ export default async function TinTucDetailPage(props: Props) {
   // Tăng lượt xem
   await prisma.newsArticle.update({ where: { id: article.id }, data: { viewCount: (article.viewCount || 0) + 1 } })
 
-  const relatedArticles = await prisma.newsArticle.findMany({
-    where: { categoryId: article.categoryId, status: 'PUBLISHED', id: { not: article.id } },
-    take: 4, orderBy: { publishedAt: 'desc' },
-  })
+  const [relatedArticles, companyInfo] = await Promise.all([
+    prisma.newsArticle.findMany({
+      where: { categoryId: article.categoryId, status: 'PUBLISHED', id: { not: article.id } },
+      take: 4, orderBy: { publishedAt: 'desc' },
+    }),
+    getCompanyInfo(),
+  ])
 
   return (
     <>
@@ -80,12 +85,12 @@ export default async function TinTucDetailPage(props: Props) {
               <div style={{ marginTop: 24, padding: '16px', background: 'var(--bg-light)', borderRadius: 8 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>Chia sẻ bài viết:</p>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://soicuongluc.com/tin-tuc/${article.slug}`)}`}
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/tin-tuc/${article.slug}`)}`}
                     target="_blank" rel="noopener"
                     style={{ background: '#3b5998', color: '#fff', padding: '6px 14px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
                     Facebook
                   </a>
-                  <a href={`https://zalo.me/share?url=${encodeURIComponent(`https://soicuongluc.com/tin-tuc/${article.slug}`)}`}
+                  <a href={`https://zalo.me/share?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/tin-tuc/${article.slug}`)}`}
                     target="_blank" rel="noopener"
                     style={{ background: '#0068ff', color: '#fff', padding: '6px 14px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
                     Zalo
@@ -111,12 +116,14 @@ export default async function TinTucDetailPage(props: Props) {
               </div>
 
               {/* CTA */}
-              <div style={{ marginTop: 16, background: 'var(--primary)', color: '#fff', padding: 16, borderRadius: 8, textAlign: 'center' }}>
-                <p style={{ fontSize: 13, marginBottom: 10, color: 'rgba(255,255,255,0.9)' }}>Cần tư vấn sản phẩm?</p>
-                <a href="tel:0916666779" style={{ display: 'block', background: 'var(--accent)', color: '#fff', padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>
-                  📞 0916 666 779
-                </a>
-              </div>
+              {companyInfo.phone && (
+                <div style={{ marginTop: 16, background: 'var(--primary)', color: '#fff', padding: 16, borderRadius: 8, textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, marginBottom: 10, color: 'rgba(255,255,255,0.9)' }}>Cần tư vấn sản phẩm?</p>
+                  <a href={`tel:${companyInfo.phone}`} style={{ display: 'block', background: 'var(--accent)', color: '#fff', padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>
+                    📞 {companyInfo.phone}
+                  </a>
+                </div>
+              )}
             </aside>
           </div>
         </div>

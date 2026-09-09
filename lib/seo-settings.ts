@@ -2,16 +2,15 @@ import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 import type { SeoSetting } from '@prisma/client'
 
-// Giá trị mặc định khi admin chưa cấu hình gì - khớp với metadata tĩnh cũ từng hard-code
-// trong app/layout.tsx, đảm bảo trang chủ không bị "trắng" thẻ SEO trước khi ai đó vào
-// /admin/cai-dat-seo điền dữ liệu lần đầu.
+// Giá trị mặc định khi admin CHƯA VÀO /admin/cai-dat-seo điền gì cả - cố ý để chung chung
+// (không phải nội dung thật của khách hàng nào) vì đây là code dùng lại cho nhiều dự án. Đảm
+// bảo trang chủ không bị "trắng" thẻ SEO hoàn toàn ở lần chạy đầu tiên trước khi cấu hình.
 export const SEO_DEFAULTS = {
-  metaTitle: 'Sợi cường lực HARIFA | soicuongluc.com',
-  metaDescription:
-    'HARIFA - Nhà phân phối chính hãng sợi cường lực: Sợi polyester, sợi nylon, sợi carbon, lốp xe công nghiệp. Uy tín - Chất lượng - Chính hãng.',
-  ogTitle: 'Sợi cường lực HARIFA',
-  ogDescription: 'Nhà phân phối sợi cường lực chính hãng tại Việt Nam',
-  ogUrl: 'https://soicuongluc.com',
+  metaTitle: 'Trang chủ',
+  metaDescription: 'Đang cập nhật - vào /admin/cai-dat-seo để điền thông tin SEO thật cho website.',
+  ogTitle: 'Trang chủ',
+  ogDescription: 'Đang cập nhật',
+  ogUrl: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
 } as const
 
 /**

@@ -58,7 +58,7 @@ module.exports = {
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
   			},
-  			/* ===== HARIFA Admin "glass" design system (chỉ dùng trong .admin-root) ===== */
+  			/* ===== Admin "glass" design system (chỉ dùng trong .admin-root) ===== */
   			'admin-primary': 'rgb(var(--admin-primary) / <alpha-value>)',
   			'admin-primary-2': 'rgb(var(--admin-primary-2) / <alpha-value>)',
   			'admin-sky': 'rgb(var(--admin-sky) / <alpha-value>)',

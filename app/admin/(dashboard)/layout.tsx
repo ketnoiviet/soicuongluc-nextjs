@@ -16,7 +16,7 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-admin',
 })
 
-export const metadata = { title: 'Quản trị | HARIFA' }
+export const metadata = { title: `Quản trị | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Admin'}` }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // Đọc lại user từ DB (không chỉ giải mã JWT) để 1 tài khoản bị khoá/đổi quyền giữa

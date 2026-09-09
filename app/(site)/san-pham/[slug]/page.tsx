@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { ProductCard } from '@/components/ui/Cards'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { SITE_NAME } from '@/lib/site-name'
+import { getCompanyInfo } from '@/lib/company-info'
 import type { Metadata } from 'next'
 import type { ProductCategory } from '@prisma/client'
 
@@ -14,8 +16,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const cat = await prisma.productCategory.findFirst({ where: { slug: params.slug } })
   if (!cat) return { title: 'Sản phẩm không tồn tại' }
   return {
-    title: `${cat.name} | HARIFA - soicuongluc.com`,
-    description: cat.shortDescription || `Danh sách sản phẩm ${cat.name} chính hãng tại HARIFA`,
+    title: `${cat.name} | ${SITE_NAME}`,
+    description: cat.shortDescription || `Danh sách sản phẩm ${cat.name}`,
   }
 }
 
@@ -33,10 +35,13 @@ export default async function SanPhamCategoryPage(props: Props) {
 
   if (!category) notFound()
 
-  const products = await prisma.product.findMany({
-    where: { categoryId: category.id, status: 'PUBLISHED' },
-    orderBy: { sortOrder: 'asc' },
-  })
+  const [products, companyInfo] = await Promise.all([
+    prisma.product.findMany({
+      where: { categoryId: category.id, status: 'PUBLISHED' },
+      orderBy: { sortOrder: 'asc' },
+    }),
+    getCompanyInfo(),
+  ])
 
   return (
     <>
@@ -84,10 +89,12 @@ export default async function SanPhamCategoryPage(props: Props) {
                 <p style={{ fontSize: 13, marginBottom: 10, color: 'rgba(255,255,255,0.9)' }}>
                   Cần tư vấn chọn sợi phù hợp?
                 </p>
-                <a href="tel:0916666779" style={{
-                  display: 'block', background: 'var(--accent)', color: '#fff',
-                  padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 700, marginBottom: 6,
-                }}>📞 0916 666 779</a>
+                {companyInfo.phone && (
+                  <a href={`tel:${companyInfo.phone}`} style={{
+                    display: 'block', background: 'var(--accent)', color: '#fff',
+                    padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 700, marginBottom: 6,
+                  }}>📞 {companyInfo.phone}</a>
+                )}
                 <Link href="/dat-hang" style={{
                   display: 'block', background: '#fff', color: 'var(--primary)',
                   padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 700,

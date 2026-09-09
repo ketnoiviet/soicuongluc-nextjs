@@ -44,7 +44,7 @@ export default async function AdminDashboardPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-extrabold text-admin-text sm:text-[26px]">Tổng quan</h1>
-          <p className="mt-1 text-sm text-admin-text-2">Chào mừng quay lại trang quản trị soicuongluc.com</p>
+          <p className="mt-1 text-sm text-admin-text-2">Chào mừng quay lại trang quản trị{process.env.NEXT_PUBLIC_SITE_URL ? ` ${process.env.NEXT_PUBLIC_SITE_URL.replace(/^https?:\/\//, '')}` : ''}</p>
         </div>
         <div className="admin-glass rounded-full px-4 py-2 text-sm font-medium capitalize text-admin-text-2">{today}</div>
       </div>

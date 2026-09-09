@@ -58,12 +58,13 @@ export async function POST(request: Request) {
           tieuDe: tieuDe ? escapeHtml(tieuDe) : '',
           noiDung: escapeHtml(noiDung),
         }
+        const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Website'
         await transporter.sendMail({
-          from: `"soicuongluc.com" <${process.env.SMTP_USER}>`,
-          to: process.env.EMAIL_TO || 'sales@harifavn.com',
+          from: `"${siteName}" <${process.env.SMTP_USER}>`,
+          to: process.env.EMAIL_TO || process.env.SMTP_USER,
           subject: `[Website] ${safe.tieuDe || 'Liên hệ mới'} - ${safe.tenKH}`,
           html: `
-            <h2 style="color:#1a5276">Thông tin liên hệ mới từ soicuongluc.com</h2>
+            <h2 style="color:#1a5276">Thông tin liên hệ mới từ ${siteName}</h2>
             <table style="border-collapse:collapse;width:100%;font-size:14px">
               <tr><td style="padding:8px;background:#f5f7fa;font-weight:700;border:1px solid #dde1e7;width:140px">Họ tên</td><td style="padding:8px;border:1px solid #dde1e7">${safe.tenKH}</td></tr>
               <tr><td style="padding:8px;background:#f5f7fa;font-weight:700;border:1px solid #dde1e7">Điện thoại</td><td style="padding:8px;border:1px solid #dde1e7"><a href="tel:${safe.dienThoai}">${safe.dienThoai}</a></td></tr>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getImageUrl } from '@/lib/utils'
+import { SITE_NAME } from '@/lib/site-name'
 import type { Metadata } from 'next'
 
 interface Props { params: Promise<{ slug: string }> }
@@ -11,7 +12,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params;
   const article = await prisma.aboutArticle.findFirst({ where: { slug: params.slug } })
   if (!article) return { title: 'Bài viết không tồn tại' }
-  return { title: `${article.title} | HARIFA` }
+  return { title: `${article.title} | ${SITE_NAME}` }
 }
 
 export default async function GioiThieuDetailPage(props: Props) {

@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { NewsCardVertical } from '@/components/ui/Cards'
 import Link from 'next/link'
+import { SITE_NAME } from '@/lib/site-name'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tin tức & Kiến thức sợi cường lực | HARIFA',
-  description: 'Cập nhật tin tức mới nhất về ngành sợi cường lực, polyester, nylon, carbon từ HARIFA',
+  title: `Tin tức | ${SITE_NAME}`,
 }
 
 export default async function TinTucPage(

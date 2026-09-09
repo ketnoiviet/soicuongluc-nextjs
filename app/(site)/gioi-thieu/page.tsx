@@ -3,10 +3,10 @@ import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { getImageUrl } from '@/lib/utils'
 import type { Metadata } from 'next'
+import { SITE_NAME } from '@/lib/site-name'
 
 export const metadata: Metadata = {
-  title: 'Giới thiệu Công ty HARIFA | soicuongluc.com',
-  description: 'HARIFA - Công ty TNHH SXTMDV HARIFA, nhà phân phối sợi cường lực chính hãng uy tín tại Việt Nam',
+  title: `Giới thiệu | ${SITE_NAME}`,
 }
 
 export default async function GioiThieuPage() {
@@ -29,8 +29,7 @@ export default async function GioiThieuPage() {
       <section className="page-section">
         <div className="container">
           <div className="section-title">
-            <h2>Giới thiệu HARIFA</h2>
-            <p>Nhà phân phối sợi cường lực chính hãng tại Việt Nam</p>
+            <h2>Giới thiệu {SITE_NAME}</h2>
           </div>
 
           {articles.length === 0 ? (

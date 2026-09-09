@@ -6,41 +6,48 @@ import AdminSelect from '@/app/admin/_components/AdminSelect'
 import { STRUCTURED_DATA_TYPES, STRUCTURED_DATA_TYPE_LABELS, type StructuredDataType } from '@/lib/enums'
 import { saveStructuredDataAction } from './actions'
 
-const TEMPLATES: Record<StructuredDataType, object> = {
-  Organization: {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'HARIFA',
-    url: 'https://soicuongluc.com',
-    logo: 'https://soicuongluc.com/images/og-share.jpg',
-    contactPoint: { '@type': 'ContactPoint', telephone: '+84-916-666-779', contactType: 'sales' },
-  },
-  LocalBusiness: {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name: 'HARIFA',
-    url: 'https://soicuongluc.com',
-    telephone: '+84-916-666-779',
-    address: { '@type': 'PostalAddress', addressCountry: 'VN' },
-  },
-  WebSite: {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'soicuongluc.com',
-    url: 'https://soicuongluc.com',
-  },
-  Product: {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: 'Tên sản phẩm',
-    description: 'Mô tả sản phẩm',
-    brand: { '@type': 'Brand', name: 'HARIFA' },
-  },
-  BreadcrumbList: {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://soicuongluc.com' }],
-  },
+// Lấy từ biến môi trường thay vì hard-code tên/domain của 1 khách hàng cụ thể - đây là mẫu
+// JSON-LD dùng chung, admin bấm "Chèn mẫu" xong tự điền thêm chi tiết riêng của mình.
+function buildTemplates(): Record<StructuredDataType, object> {
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Tên website'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-domain.com'
+
+  return {
+    Organization: {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: siteName,
+      url: siteUrl,
+      logo: `${siteUrl}/images/og-share.jpg`,
+      contactPoint: { '@type': 'ContactPoint', telephone: '+84-xxx-xxx-xxx', contactType: 'sales' },
+    },
+    LocalBusiness: {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: siteName,
+      url: siteUrl,
+      telephone: '+84-xxx-xxx-xxx',
+      address: { '@type': 'PostalAddress', addressCountry: 'VN' },
+    },
+    WebSite: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: siteName,
+      url: siteUrl,
+    },
+    Product: {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'Tên sản phẩm',
+      description: 'Mô tả sản phẩm',
+      brand: { '@type': 'Brand', name: siteName },
+    },
+    BreadcrumbList: {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Trang chủ', item: siteUrl }],
+    },
+  }
 }
 
 export default function StructuredDataEditor({
@@ -57,7 +64,8 @@ export default function StructuredDataEditor({
   const [error, setError] = useState<string | null>(null)
 
   const insertTemplate = () => {
-    const t = TEMPLATES[type as StructuredDataType] || TEMPLATES.Organization
+    const templates = buildTemplates()
+    const t = templates[type as StructuredDataType] || templates.Organization
     setJson(JSON.stringify(t, null, 2))
   }
 
